@@ -2,19 +2,11 @@
 
 __Minigap is a client-side javascript framework for PhoneGap__
 
-MiniGap is designed to let you create PhoneGap applications fast.
+## Disclaimer
 
-- Create PhoneGap application fast
-- DRY approach
-- Hide PhoneGap specific stuffs
-- View and Controllers
-- Reactivity
-- Handle HTTP requests, framework events, routes and web sockets all the same way
-- Extendible
-- Backend Agnostic
-- Bulletprof Workflow
+This project is yet in a very early stage of development and is not complete. This disclaimer will go away with the first alpha release.
 
-## Istall
+## Istallation
 
 ```
 npm install -g minigap
@@ -46,17 +38,35 @@ The whole bundle is packaged to `www/js/app.js` so include this file in your `in
  <script type="text/javascript" src="js/app.js"></script>
 ```
 
-
-## A tipical PhoneGap application
-
-
-
-## One controller to rule them all
+## Handle everything with controllers
 
 MiniGap adapt tipical components of a mobile application to let you handle them all the same way.
 
 MiniGap applications are _event-driven_
 
+```
+Minigap.controller
+  'app.start': ->
+    console.log "Application Started"
+
+  '/': ->
+
+    @requests [
+        path: '/top_events'
+      ,
+        path: '/top_events'
+        params:
+          section: 'sport'
+      ,
+        path: '/top_events'
+        params:
+         section: 'music'
+    ], 
+
+    (response) ->
+     @render 'templates/home', response
+
+```
 
 ## Default Events
 
@@ -87,3 +97,13 @@ MiniGap applications are _event-driven_
 ## Custom events
 
 You can use `app.emit()` to send custom events
+
+---
+
+Copyright (c) 2013 mcasimir
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
