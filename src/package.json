@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-coffee": "~0.7.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt-contrib-handlebars": "~0.5.9",
+    "sprockets-chain": "~0.0.8"
+  }
+}

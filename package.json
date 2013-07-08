@@ -1,0 +1,24 @@
+{
+  "name": "minigap",
+  "version": "0.0.1",
+  "description": "Client-side javascript framework for PhoneGap",
+  "main": "dist/minigap.js",
+  "keywords": [
+    "minigap",
+    "phonegap"
+  ],
+  "repository" : {
+  "type" : "git",
+  "url" : "https://mcasimir@github.com/yikulju/Foursquare-on-node.git"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-coffee": "~0.7.0",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt-contrib-clean": "~0.4.1",
+    "grunt-contrib-handlebars": "~0.5.9",
+    "grunt-contrib-copy": "~0.4.1",
+    "sprockets-chain": "~0.0.8"
+  }
+}
