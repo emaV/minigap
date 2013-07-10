@@ -148,11 +148,7 @@ this.Minigap.TemplateEngine = (function() {
     this.app = app;
   }
 
-  TemplateEngine.prototype.applyTemplate = function(template, context, cb) {
-    var html;
-    html = templateFunc(context);
-    return cb.call(this.app);
-  };
+  TemplateEngine.prototype.applyTemplate = function(template, context, cb) {};
 
   return TemplateEngine;
 
@@ -292,7 +288,7 @@ this.Minigap.App = (function() {
       options = {};
     }
     this.router = new Minigap.Router();
-    this.template_engine = new Minigap.TemplateEngine(this);
+    this.template_engine = new Minigap.DefaultTemplateEngine(this);
     this.dom_helper = new Minigap.DomHelper();
     this.frames = {};
     if (options.frames != null) {
@@ -412,14 +408,14 @@ Minigap.HandlebarsTemplateEngine = (function(_super) {
   }
 
   HandlebarsTemplateEngine.prototype.applyTemplate = function(template, context, cb) {
-    var html;
-    html = templateFunc(context);
-    return cb.call(this.app);
+    return cb.call(this.app, JST[template](context));
   };
 
   return HandlebarsTemplateEngine;
 
 })(Minigap.TemplateEngine);
+
+Minigap.DefaultTemplateEngine = Minigap.HandlebarsTemplateEngine;
 
 var _ref,
   __hasProp = {}.hasOwnProperty,

@@ -2,14 +2,32 @@
   "name": "minigap",
   "version": "0.0.1",
   "description": "Client-side javascript framework for PhoneGap",
-  "main": "dist/minigap.js",
+  "homepage":    "https://github.com/mcasimir/minigap",
+  "author": {
+    "name":  "mcasimir",
+    "email": "maurizio.cas@gmail.com",
+    "url":   "https://github.com/mcasimir"
+  },
   "keywords": [
     "minigap",
     "phonegap"
   ],
   "repository" : {
-  "type" : "git",
-  "url" : "https://mcasimir@github.com/yikulju/Foursquare-on-node.git"
+    "type" : "git",
+    "url" : "https://github.com/mcasimir/minigap.git"
+  },
+
+  "main": "dist/minigap.js",
+  "bin":          {
+    "minigap": "bin/cli.js"
+  },
+  "dependencies": {
+    "nopt": "~2.1.1",
+    "ncp": "~0.4.2",
+    "cli-color": "0.2.2",
+    "wget": "~0.0.1",
+    "coffeebuild": "~0.2.2",
+    "node-watch": "~0.3.4"
   },
   "devDependencies": {
     "grunt": "~0.4.1",

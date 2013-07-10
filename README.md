@@ -4,7 +4,11 @@ __Minigap is a client-side javascript framework for PhoneGap__
 
 ## Disclaimer
 
-This project is yet in a very early stage of development and is not complete. This disclaimer will go away with the first alpha release.
+__This project is yet in a very early stage of development and is not complete.__
+
+__This README is used as a specification of what it will be, even if part of it have been implemented already there is no guarantee that the source of this package code reflects or will reflect it in any way.__
+
+__This disclaimer will go away with the first alpha release.__
 
 ## Istallation
 
@@ -15,28 +19,203 @@ npm install -g minigap
 ## Setup a new application
 
 ```
-cd myPhonegapApp
-minigap init
+minigap new myApp
+cd myApp
 npm install
 ```
 
-This will copy the minigap distribution to your project root, install dependencies and create an initial application layout that you can use to further develop.
+This will create an initial application layout in `myApp` folder that you can use to further develop and install development dependencies.
+
+
+## Directory Structure
+```
+myApp/
+  src/
+    css/
+      app.css
+      
+  	js/
+      lib/
+        minigap.js
+        handlebar.runtime.js (optional)
+  	  app.coffee (or app.js)
+  	
+  	templates/
+  
+  	index.html
+
+  package.json
+  Gruntfile.coffee
+```
 
 ## Building your app
 
-Now that you are ready to create your application you would like to know how to build what you will do. Minigap ships with a Gruntfile to perform basic tasks. Just type
+Now that you are ready to create your application you would like to know how to build it. Minigap ships with a `Gruntfile` to perform basic tasks.
+
+### Configuration
+
+Minigap builds soruces compiling javascript/coffeescript, templates and html files passing your source through a compiler able to preprocess files.
+
+Preprocessor is used to concatenate files and perform conditional compilation of code using macros in a way similar to `c/c++` preprocessor.  
+
+### Preprocessing Macros
+
+Preprocessing Macros are comments starting with `=`
+
+eg.
+
+Javascript
 
 ```
-grunt build
+//= if development
+...
+//= end
+```
+
+Coffeescript
+
+```
+#= if development
+…
+#= end
+```
+
+HTML
+(sorry for spacings my markdown editor goes crazy with html comments)
+
+```
+< !--= if development -- >
+...
+< !--= end -- >
+```
+
+### Valid preprocessor directives
+
+#### Inclusion
+
+```
+#= include <mylib.js>	
+```
+
+#### Conditional compilation
+
+```
+#= if CONDITION / unless CONDITION
+…
+#= else / else if CONDITION / else unless
+...
+#= end
+```
+
+##### Condition Operators
+
+- ! _or_ not
+- &amp; _or_ and
+- || _or_ or
+- &lt; _or_ lt
+- &gt; _or_ gt
+- &lt;= _or_ lte
+- &gt;= _or_ gte
+- == _or_ eq
+- != _or_ neq
+
+### Preprocessor environment
+
+Minigap setup some preprocessor variables you can use as conditions.
+
+When building for development the `development` variable is set to true. 
+
+When building for production the `production` variable is set to true.
+
+When building for a specific target the `target` variable is set to the target name.
+
+So you can do things like this:
+
+```
+#= if development
+   console.log "debug: #{myVar}"
+#= end
+```
+
+or this:
+
+```
+< !--= if development -- >
+	<script src="weinre_target_xyz.js"></script>
+< !--= end -- >
+```
+
+or this:
+
+```
+#= if target == 'ios'
+…
+#= else if target == 'android'
+...
+#= end
+```
+
+### Managing Targets
+
+Phonegap can target different devices and architectures. Minigap would hopefully simplify the task of building the same app for different targets.
+
+In order to do so original Phonegap projects are mirrored inside the minigap project tree. These mirrors are used for building development packages. Any time you want to release your code you can create production bundles from command line.
+
+Production bundles are deployed back to their original locations. 
+ 
+Minigap targets are built through `grunt-contrib-minigap` tasks. So you may want to configure some in your `Gruntfile`.
+
+#### Configuring targets
+```
+  grunt.initConfig
+    # ..
+
+    minigap:
+      # ...
+      targets:
+		ios: '../myPhonegapIos'
+		android: '../myPhonegapAndroid'
+		# ...
+```
+
+Now that your targets is set up you should run the `mirror` task that create copies of targets inside the directory tree.
+
+```
+grunt mirror
+```
+
+This command would create a mirror of any target inside `yourApp/[target]` directories.
+
+From now on you will use these directory for development. Any time you want to create production build, the application is copyied to original target.
+
+
+## Development
+
+Minigap is designed to speed-up PhoneGap development process. A typical downside of phonegap development against regoular browsers is that you have to recompile and re-launch simulator any time you change something in your code. This task can be very annoying and slow.
+
+To overcome this problem minigap ships with a mini-server that once started serves your assets. This way any change to the source is immediately reflected in your Phonegap runtime.
+
+To start the server just lauch the grunt `start` task specifing the relative target.
+
+```
+grunt start [target]
+```
+
+This task will start the development server and watch for changes in your source so they are automatically rebuilt.
+
+Also it will setup a WebSocket firing events on every rebuild. You can listen to it in order to refresh the page when code is updated.
+
+
+### Preprocessing
+
+```
+grunt build ios
 ```
 
 to get ready to deploy.
 
-The whole bundle is packaged to `www/js/app.js` so include this file in your `index.html` to get ready to go. 
+### Configuring build
 
-```
- <script type="text/javascript" src="js/app.js"></script>
-```
 
 ## Handle everything with controllers
 
