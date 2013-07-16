@@ -7,10 +7,8 @@ ncp  = require("ncp").ncp
 path = require("path")
 fs   = require("fs")
 clc  = require('cli-color')
-wget = require('wget')
-Coffeebuild = require('coffeebuild')
-watch = require('node-watch')
-
+sh   = require('execSync')
+mkdirp = require('mkdirp')
 options = nopt({}, {}, process.argv, 2)
 
 commands =
@@ -19,44 +17,39 @@ commands =
   # =            Init Task            =
   # =================================*/
 
-  init:
-    description: "Initialize the application from the PhoneGap root"
-    run: ->
-      if not commands.check.run(log: false) and not options.force?
-        console.log """
-          
-          This folder is not suitable to be used as minigap installation target. 
-          Use 'minigap check' to obtain more information about this inconvenient or 
-          repeat 'minigap init' with '--force' flag to continue anyway.
-          
-          """
+  "new":
+    description: "Create a new minigap application"
+    run: (appPath) ->
+
+      absPath = path.resolve(appPath)
+      appName = path.basename(appPath)
+
+      if not mkdirp.sync(appPath)
+        console.log clc.red """
+
+          An error occurred while creating path: #{appPath}
+
+        """
         process.exit(1)
 
-      source = path.resolve path.dirname(fs.realpathSync(__filename)), '../dist'
-      destination = "."
-      ncp source, destination, (err) ->
-        if err
-          console.error(err)
-          process.exit(1)
-        
-        else
-          fs.openSync("minigap/app.coffee", 'w')
+      generatorPath = path.resolve(__dirname, "../generators")
 
-          if not options["skip-handlebars"]
-            download = wget.download(
-              "https://raw.github.com/wycats/handlebars.js/1.0.0/dist/handlebars.runtime.js", 
-              './minigap/lib/handlebars.runtime.js'
-              )
-            
-            download.on 'error', (err) ->
-              console.log(err);
-              process.exit(1)
+      process.chdir(appPath)
+      
+      yeoman = require('yeoman-generator')
+      env = yeoman()
+      env.appendPath(generatorPath)
+      env.lookup(generatorPath)
 
-            download.on 'end', ->
-              console.log clc.green "done!"
-            
-          else
-            console.log clc.green "done!"
+      done = ->
+        console.log clc.green "done!"
+
+      if options.coffee
+        env.run('app', {coffee: true}, done)
+      else
+        env.run('app', {js: true}, done)
+
+      
 
 
   # /*=================================
@@ -166,11 +159,13 @@ commands =
 # MAIN
 #
 
-command = commands[options.argv.remain[0]]
+cmd = options.argv.remain.shift()
+console.log cmd
+command = commands[cmd]
 
 if not command?
   commands.help.run()
   process.exit(1)
 
-command.run()
+command.run.apply(null, options.argv.remain)
 

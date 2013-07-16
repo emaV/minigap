@@ -89,7 +89,7 @@ HTML
 < !--= end -- >
 ```
 
-### Valid preprocessor directives
+### Preprocessing Directives
 
 #### Inclusion
 
@@ -97,12 +97,20 @@ HTML
 #= include <mylib.js>	
 ```
 
+#### Direct Output
+
+```
+#= print VALUE
+```
+
 #### Conditional compilation
 
 ```
-#= if CONDITION / unless CONDITION
-…
-#= else / else if CONDITION / else unless
+#= if CONDITION
+...
+#= else if CONDITION
+...
+#= else
 ...
 #= end
 ```
@@ -121,7 +129,7 @@ HTML
 
 ### Preprocessor environment
 
-Minigap setup some preprocessor variables you can use as conditions.
+Minigap sets some preprocessor variables you can use as conditions.
 
 When building for development the `development` variable is set to true. 
 
@@ -186,7 +194,7 @@ grunt mirror
 
 This command would create a mirror of any target inside `yourApp/[target]` directories.
 
-From now on you will use these directory for development. Any time you want to create production build, the application is copyied to original target.
+From now on you will use these directory for development. Any time you want to create production build, the application is copyied to its original target.
 
 
 ## Development

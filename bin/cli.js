@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 ;
-var Coffeebuild, clc, command, commands, fs, ncp, nopt, options, path, watch, wget;
+var clc, cmd, command, commands, fs, mkdirp, ncp, nopt, options, path, sh;
 
 nopt = require("nopt");
 
@@ -13,48 +13,41 @@ fs = require("fs");
 
 clc = require('cli-color');
 
-wget = require('wget');
+sh = require('execSync');
 
-Coffeebuild = require('coffeebuild');
-
-watch = require('node-watch');
+mkdirp = require('mkdirp');
 
 options = nopt({}, {}, process.argv, 2);
 
 commands = {
-  init: {
-    description: "Initialize the application from the PhoneGap root",
-    run: function() {
-      var destination, source;
-      if (!commands.check.run({
-        log: false
-      }) && (options.force == null)) {
-        console.log("\nThis folder is not suitable to be used as minigap installation target. \nUse 'minigap check' to obtain more information about this inconvenient or \nrepeat 'minigap init' with '--force' flag to continue anyway.\n");
+  "new": {
+    description: "Create a new minigap application",
+    run: function(appPath) {
+      var absPath, appName, done, env, generatorPath, yeoman;
+      absPath = path.resolve(appPath);
+      appName = path.basename(appPath);
+      if (!mkdirp.sync(appPath)) {
+        console.log(clc.red("An error occurred while creating path: " + appPath + "\n"));
         process.exit(1);
       }
-      source = path.resolve(path.dirname(fs.realpathSync(__filename)), '../dist');
-      destination = ".";
-      return ncp(source, destination, function(err) {
-        var download;
-        if (err) {
-          console.error(err);
-          return process.exit(1);
-        } else {
-          fs.openSync("minigap/app.coffee", 'w');
-          if (!options["skip-handlebars"]) {
-            download = wget.download("https://raw.github.com/wycats/handlebars.js/1.0.0/dist/handlebars.runtime.js", './minigap/lib/handlebars.runtime.js');
-            download.on('error', function(err) {
-              console.log(err);
-              return process.exit(1);
-            });
-            return download.on('end', function() {
-              return console.log(clc.green("done!"));
-            });
-          } else {
-            return console.log(clc.green("done!"));
-          }
-        }
-      });
+      generatorPath = path.resolve(__dirname, "../generators");
+      process.chdir(appPath);
+      yeoman = require('yeoman-generator');
+      env = yeoman();
+      env.appendPath(generatorPath);
+      env.lookup(generatorPath);
+      done = function() {
+        return console.log(clc.green("done!"));
+      };
+      if (options.coffee) {
+        return env.run('app', {
+          coffee: true
+        }, done);
+      } else {
+        return env.run('app', {
+          js: true
+        }, done);
+      }
     }
   },
   check: {
@@ -128,11 +121,15 @@ commands = {
   }
 };
 
-command = commands[options.argv.remain[0]];
+cmd = options.argv.remain.shift();
+
+console.log(cmd);
+
+command = commands[cmd];
 
 if (command == null) {
   commands.help.run();
   process.exit(1);
 }
 
-command.run();
+command.run.apply(null, options.argv.remain);

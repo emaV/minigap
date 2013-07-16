@@ -4,7 +4,7 @@ module.exports = (grunt) ->
 
     dist:
       src_path: './src'
-      dst_path: 'dist/minigap/lib'
+      dst_path: 'dist/'
       src: [ 'minigap.coffee' ]
       compile:
         options:
@@ -18,20 +18,85 @@ module.exports = (grunt) ->
         options:
           bare: true
 
+    generator:
+      copy:
+        main: 
+          files: [
+            {
+              expand: true
+              cwd: "src/generator/"
+              src: ["**"]
+              dest: "generators/app/templates/coffee/"
+            }
+          ]
+
+      coffee:
+        compile:
+          expand: true,
+          cwd: './generators/app/templates/coffee',
+          src: ['**/*.coffee'],
+          dest: './generators/app/templates/js',
+          ext: '.js'
+          options:
+            bare: true
+
+      replace:
+        js:
+          src: './generators/app/templates/js/**/*.js'
+          actions: [
+            {
+              search: 'APP_MAIN',
+              replace: 'app.js',
+              flags: 'g'
+            },
+            {
+              search: '#= include <lib/minigap.js>;'
+              replace: '//= include <lib/minigap.js>'
+              flags: 'g'
+            },
+            {
+              search: '#= if development;'
+              replace: '//= if development'
+              flags: 'g'
+            },
+            {
+              search: '#= end;'
+              replace: '//= end'
+              flags: 'g'
+            },
+            {
+              search: '#='
+              replace: '//='
+              flags: 'g'
+            }
+          ]
+        coffee:
+          src: './generators/app/templates/coffee/**/*.coffee'
+          actions: [
+            {
+              search: 'APP_MAIN',
+              replace: 'app.coffee',
+              flags: 'g'
+            },
+            {
+              search: '`'
+              replace: ''
+              flags: 'g'
+            }
+          ]
+
     watch:
       files: ["src/**/*.coffee"]
       tasks: ["build"]
   
-    copy:      
-      main: 
-        files: [ {expand: true, cwd: 'src', src: ['Gruntfile.js'], dest: 'dist/', filter: 'isFile'} ]
 
   grunt.loadNpmTasks "grunt-contrib-coffee"
   grunt.loadNpmTasks "grunt-contrib-watch"
-  grunt.loadNpmTasks "grunt-contrib-copy"
+  grunt.loadNpmTasks 'grunt-contrib-copy'
+  grunt.loadNpmTasks 'grunt-regex-replace'
+  
 
-  grunt.registerTask "build", [ "dist", "cli" ]
-  grunt.registerTask "gruntfile", ["copy"]
+  grunt.registerTask "build", ["dist", "cli", "generator"]
   grunt.registerTask "default", ["build"]
 
   grunt.registerTask 'dist', 'dist', ->
@@ -74,3 +139,14 @@ module.exports = (grunt) ->
     grunt.config.set 'coffee', o
     grunt.task.run 'coffee:compile'
 
+  grunt.registerTask 'generator', 'generator', ->
+
+    opts = grunt.config.get( 'generator' )
+    grunt.config.set 'copy', opts.copy
+    grunt.task.run 'copy'
+
+    grunt.config.set 'coffee', opts.coffee
+    grunt.task.run 'coffee:compile'
+
+    grunt.config.set 'regex-replace', opts.replace
+    grunt.task.run 'regex-replace'
