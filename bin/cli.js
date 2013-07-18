@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 ;
-var clc, cmd, command, commands, fs, mkdirp, ncp, nopt, options, path, sh;
+var clc, cmd, command, commands, fs, mkdirp, ncp, nopt, options, path, run, sh,
+  __slice = [].slice;
 
 nopt = require("nopt");
 
@@ -18,6 +19,12 @@ sh = require('execSync');
 mkdirp = require('mkdirp');
 
 options = nopt({}, {}, process.argv, 2);
+
+run = function() {
+  var args, cmd;
+  cmd = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+  return commands[cmd].run.apply(null, args);
+};
 
 commands = {
   "new": {
@@ -51,49 +58,48 @@ commands = {
     }
   },
   check: {
-    description: "Check if current folder is ready to install",
-    run: function(options) {
-      var already_installed, res, stats1, stats2;
-      if (options == null) {
-        options = {
-          log: true
-        };
+    description: "Checks if current folder is inside a minigap project",
+    run: function() {
+      if (!fs.existsSync(".minigap")) {
+        console.log(clc.red("              \n" + (clc.red('[ERROR]')) + " This is not a minigap project root.\n"));
+        return process.exit(1);
+      } else {
+        return true;
       }
-      res = false;
-      try {
-        stats1 = fs.lstatSync("www");
-        stats2 = fs.lstatSync("cordova");
-        already_installed = fs.existsSync("minigap");
-        res = stats1.isDirectory() && stats2.isDirectory() && !already_installed;
-      } catch (_error) {}
-      if (options.log) {
-        if (res) {
-          console.log("\n" + (clc.green('[VALID]')) + " This is a PhoneGap project root and can be used to install minigap.\n");
-        } else {
-          if (already_installed) {
-            console.log(clc.red("\n" + (clc.red('[INVALID]')) + " It seems that minigap is already installed here.\n\nUse 'minigap init --force' to proceed with installation anyway.\n"));
-          } else {
-            console.log(clc.red("\n" + (clc.red('[INVALID]')) + " This is not a PhoneGap project root and may be unsuitable to install minigap.\n\nUse 'minigap init --force' to proceed with installation anyway.\n"));
-          }
-        }
-      }
-      return res;
     }
   },
   build: {
     description: "Build the application",
     run: function() {
-      var builder;
-      return builder = new Coffeebuild.Builder()["with"]("coffee").source("minigap/app.coffee").coffee().store("www/js/app.js")["do"](function(task) {
-        console.log(clc.green("done!"));
-        return task.done();
-      });
+      var builder, builderAdapter, configPath, files, preproc, readConf;
+      commands.check.run();
+      require("coffee-script");
+      configPath = path.resolve("./config/build");
+      readConf = require(configPath);
+      preproc = require('preproc');
+      builder = null;
+      files = {};
+      builderAdapter = {
+        root: function(src) {
+          return path.resolve(".", src);
+        },
+        config: function(config) {
+          return builder = new preproc.Builder(config);
+        },
+        build: function(from, to) {
+          return files[from] = to;
+        }
+      };
+      readConf(builderAdapter);
+      return console.log(builder);
     }
   },
   watch: {
     description: "Watch for changes on the source code and rebuild the application",
     run: function() {
-      var filter;
+      var filter, watch, www;
+      commands.check.run();
+      watch = require('node-watch');
       filter = function(pattern, fn) {
         return function(filename) {
           if (pattern.test(filename)) {
@@ -101,8 +107,10 @@ commands = {
           }
         };
       };
-      return watch('./minigap', filter(/\.(coffee|html|js)$/, function(filename) {
-        return console.log("File Cambiato");
+      www = path.resolve('./www');
+      console.log(clc.green("Watching for changes in " + www));
+      return watch('./www', filter(/\.(coffee|html|js)$/, function(filename) {
+        return commands.build.run();
       }));
     }
   },
@@ -122,8 +130,6 @@ commands = {
 };
 
 cmd = options.argv.remain.shift();
-
-console.log(cmd);
 
 command = commands[cmd];
 

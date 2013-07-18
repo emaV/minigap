@@ -11,6 +11,9 @@ sh   = require('execSync')
 mkdirp = require('mkdirp')
 options = nopt({}, {}, process.argv, 2)
 
+run = (cmd, args...)->
+  commands[cmd].run.apply(null, args)
+
 commands =
 
   # /*=================================
@@ -57,46 +60,18 @@ commands =
   # =================================*/
 
   check:
-    description: "Check if current folder is ready to install"
-    run: (options = {log: true}) ->
-      res = false
-      try
-        stats1 = fs.lstatSync("www")
-        stats2 = fs.lstatSync("cordova")
-        already_installed = fs.existsSync("minigap")
-
-        res = stats1.isDirectory() and stats2.isDirectory() and not already_installed
-
-      if options.log
-        if res
-          console.log """
-            
-
-            #{clc.green('[VALID]')} This is a PhoneGap project root and can be used to install minigap.
-
-            """
-        else
-          if already_installed
-            console.log clc.red """
-              
-
-              #{clc.red('[INVALID]')} It seems that minigap is already installed here.
-
-              Use 'minigap init --force' to proceed with installation anyway.
-              
-              """
-
-          else      
-            console.log clc.red """
-              
-              
-              #{clc.red('[INVALID]')} This is not a PhoneGap project root and may be unsuitable to install minigap.
-
-              Use 'minigap init --force' to proceed with installation anyway.
-              
-              """
-
-      res
+    description: "Checks if current folder is inside a minigap project"
+    run: () ->
+      
+      if not fs.existsSync(".minigap")
+        console.log clc.red """
+                      
+        #{clc.red('[ERROR]')} This is not a minigap project root.
+        
+        """
+        process.exit(1)
+      else
+        true
 
 
   # /*=================================
@@ -106,15 +81,31 @@ commands =
   build:
     description: "Build the application"
     run: ->
-      builder = new Coffeebuild.Builder()
-      .with("coffee")
-      .source("minigap/app.coffee")
-      .coffee()
-      .store("www/js/app.js")
-      .do (task) ->
-        console.log clc.green "done!"
-        task.done()
+      commands.check.run()
+      require("coffee-script")
 
+      configPath = path.resolve("./config/build")
+      readConf = require(configPath)
+      preproc = require('preproc')
+
+      builder = null
+      files = {}
+
+      builderAdapter = {
+
+        root: (src) ->
+          path.resolve(".", src)
+
+        config: (config)  ->
+          builder = new preproc.Builder(config)
+
+        build: (from, to) ->
+          files[from] = to
+
+      }
+
+      readConf(builderAdapter)
+      console.log builder
 
   # /*=================================
   # =           Watch Task            =
@@ -123,12 +114,16 @@ commands =
   watch:
     description: "Watch for changes on the source code and rebuild the application"
     run: ->
+      commands.check.run()
+
+      watch = require('node-watch')
       filter = (pattern, fn) ->
         (filename) ->
           fn filename  if pattern.test(filename)
-
-      watch './minigap', filter(/\.(coffee|html|js)$/, (filename) ->
-          console.log "File Cambiato"
+      www = path.resolve('./www')
+      console.log clc.green("Watching for changes in #{www}")
+      watch './www', filter(/\.(coffee|html|js)$/, (filename) ->
+          commands.build.run()
         )
 
 
@@ -160,7 +155,6 @@ commands =
 #
 
 cmd = options.argv.remain.shift()
-console.log cmd
 command = commands[cmd]
 
 if not command?

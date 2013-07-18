@@ -28,7 +28,8 @@
     "wget": "~0.0.1",
     "mkdirp": "~0.3.5",
     "execSync": "~1.0.1-pre",
-    "yeoman-generator": "~0.12.3"
+    "yeoman-generator": "~0.12.3",
+    "preproc": "~0.0.4"
   },
   "devDependencies": {
     "grunt": "~0.4.1",

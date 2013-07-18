@@ -22,7 +22,7 @@ MinigapGenerator.prototype.app = function app() {
   this.mkdir('www/css');
   this.copy('app.css', "www/css/app.css");
   this.copy('index.html', "www/index.html");
-  
+  this.write('.minigap', '');
   if (this.options['coffee']) {
     this.directory('coffee', './');  
   } else {

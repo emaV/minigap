@@ -1,11 +1,8 @@
-module.exports = (config) ->
-  config.builder
-    
+module.exports = (builder) ->
+  builder.config
     env: 
-      devSocket: "localhost:3300/devSocket"
       assetsServer: "localhost:3300/devSocket"
-
-    libs: [ "#{config.root}/lib" ]
+      devSocket: "localhost:3301/devSocket"
 
     types:
       coffeescript:
@@ -33,4 +30,4 @@ module.exports = (config) ->
         delimiters: ["<!--=", "-->"]
         extensions: ['.html']
 
-  config.build("www/js/APP_MAIN", "www/js/APP_MAIN")
+  builder.build("www/js/APP_MAIN", "www/js/APP_MAIN")

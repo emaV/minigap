@@ -1,10 +1,9 @@
-module.exports = function(config) {
-  config.builder({
+module.exports = function(builder) {
+  builder.config({
     env: {
-      devSocket: "localhost:3300/devSocket",
-      assetsServer: "localhost:3300/devSocket"
+      assetsServer: "localhost:3300/devSocket",
+      devSocket: "localhost:3301/devSocket"
     },
-    libs: ["" + config.root + "/lib"],
     types: {
       coffeescript: {
         delimiters: ["//="],
@@ -38,5 +37,5 @@ module.exports = function(config) {
       }
     }
   });
-  return config.build("www/js/app.js", "www/js/app.js");
+  return builder.build("www/js/app.js", "www/js/app.js");
 };

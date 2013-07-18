@@ -79,8 +79,18 @@ module.exports = (grunt) ->
               flags: 'g'
             },
             {
-              search: '`'
-              replace: ''
+              search: '`#= include <lib/minigap.js>`'
+              replace: '#= include <lib/minigap.js>'
+              flags: 'g'
+            },
+            {
+              search: '`#= if development`'
+              replace: '#= if development'
+              flags: 'g'
+            },
+            {
+              search: '`#= end`'
+              replace: '#= end'
               flags: 'g'
             }
           ]
