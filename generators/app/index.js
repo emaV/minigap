@@ -20,6 +20,7 @@ util.inherits(MinigapGenerator, yeoman.generators.Base);
 MinigapGenerator.prototype.app = function app() {
   this.mkdir('www');
   this.mkdir('www/css');
+  this.mkdir('www/templates')
   this.copy('app.css', "www/css/app.css");
   this.copy('index.html', "www/index.html");
   this.write('.minigap', '');
@@ -31,7 +32,3 @@ MinigapGenerator.prototype.app = function app() {
 
   this.copy('../../../dist/minigap.js', 'lib/minigap.js');
 };
-
-// MinigapGenerator.prototype.projectfiles = function projectfiles() {
-//   this.copy('jshintrc', '.jshintrc');
-// };

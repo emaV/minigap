@@ -37,5 +37,6 @@ module.exports = function(builder) {
       }
     }
   });
-  return builder.build("www/js/app.js", "www/js/app.js");
+  builder.build("www/js/app.js");
+  return builder.build("www/index.html");
 };

@@ -20,39 +20,44 @@ npm install -g minigap
 
 ```
 minigap new myApp
-cd myApp
-npm install
 ```
 
 This will create an initial application layout in `myApp` folder that you can use to further develop and install development dependencies.
 
+Then type
+
+```
+cd myApp
+minigap start
+```
+And you can start to develop inside your browser. To use it along with PhoneGap you need to setup a new target. 
 
 ## Directory Structure
 ```
 myApp/
-  src/
+  lib/
+      minigap.js
+  www/
     css/
       app.css
       
   	js/
-      lib/
-        minigap.js
-        handlebar.runtime.js (optional)
-  	  app.coffee (or app.js)
+      app.coffee (or app.js)  
   	
   	templates/
-  
+  	  
   	index.html
+  
+  targets/
+    browser/
+   		dev/
+   		dist/
 
-  package.json
-  Gruntfile.coffee
 ```
 
 ## Building your app
 
-Now that you are ready to create your application you would like to know how to build it. Minigap ships with a `Gruntfile` to perform basic tasks.
-
-### Configuration
+Now that you are ready to create your application you would like to know how to build it.
 
 Minigap builds soruces compiling javascript/coffeescript, templates and html files passing your source through a compiler able to preprocess files.
 
@@ -170,8 +175,7 @@ Phonegap can target different devices and architectures. Minigap would hopefully
 In order to do so original Phonegap projects are mirrored inside the minigap project tree. These mirrors are used for building development packages. Any time you want to release your code you can create production bundles from command line.
 
 Production bundles are deployed back to their original locations. 
- 
-Minigap targets are built through `grunt-contrib-minigap` tasks. So you may want to configure some in your `Gruntfile`.
+
 
 #### Configuring targets
 ```
@@ -206,7 +210,7 @@ To overcome this problem minigap ships with a mini-server that once started serv
 To start the server just lauch the grunt `start` task specifing the relative target.
 
 ```
-grunt start [target]
+minigap start [target]
 ```
 
 This task will start the development server and watch for changes in your source so they are automatically rebuilt.
@@ -217,15 +221,14 @@ Also it will setup a WebSocket firing events on every rebuild. You can listen to
 ### Preprocessing
 
 ```
-grunt build ios
+minigap dist ios
 ```
 
-to get ready to deploy.
+to get ready to distribute your app.
 
-### Configuring build
+## Client side framework
 
-
-## Handle everything with controllers
+### Controllers
 
 MiniGap adapt tipical components of a mobile application to let you handle them all the same way.
 

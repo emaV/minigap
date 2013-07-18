@@ -29,5 +29,6 @@ module.exports = (builder) ->
       html:
         delimiters: ["<!--=", "-->"]
         extensions: ['.html']
-
-  builder.build("www/js/app.coffee", "www/js/app.coffee")
+  
+  builder.build("www/js/app.coffee")
+  builder.build("www/index.html")
