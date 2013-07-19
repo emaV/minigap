@@ -1,5 +1,5 @@
 module.exports = function(builder) {
-  builder.config({
+  return builder.config({
     env: {
       assetsServer: "localhost:3300/devSocket",
       devSocket: "localhost:3301/devSocket"
@@ -35,8 +35,7 @@ module.exports = function(builder) {
         delimiters: ["<!--=", "-->"],
         extensions: ['.html']
       }
-    }
+    },
+    files: ["js/app.js", "index.html"]
   });
-  builder.build("www/js/app.js");
-  return builder.build("www/index.html");
 };

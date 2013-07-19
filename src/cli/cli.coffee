@@ -10,9 +10,41 @@ clc  = require('cli-color')
 sh   = require('execSync')
 mkdirp = require('mkdirp')
 options = nopt({}, {}, process.argv, 2)
+OPTIONS = options
 
 run = (cmd, args...)->
   commands[cmd].run.apply(null, args)
+
+readBuildConfig = (options={})->
+  require("coffee-script")
+
+  configPath = path.resolve("./config/build")
+  readConf = require(configPath)
+  preproc = require('preproc')
+
+  readConf {
+    sourcePath: (p) ->
+      path.resolve(".", p)
+    config: (conf) ->
+      for k, v of conf
+        options[k] = v
+  }
+
+  options
+
+
+quoteRe = (str) ->
+  str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")
+
+getAllTargets = () ->
+  files = fs.readdirSync("targets")
+  dirs = []
+  for file in files
+    stats = fs.statSync(path.resolve("targets", file))
+    if stats.isDirectory()
+      dirs.push(file)
+    
+  dirs
 
 commands =
 
@@ -80,32 +112,53 @@ commands =
 
   build:
     description: "Build the application"
-    run: ->
+    run: (targets...) ->
       commands.check.run()
-      require("coffee-script")
 
-      configPath = path.resolve("./config/build")
-      readConf = require(configPath)
-      preproc = require('preproc')
+      options = readBuildConfig()
 
-      builder = null
-      files = {}
+      files = options.files or []
+      paths = options.paths or [ path.resolve("./lib") ]
 
-      builderAdapter = {
-
-        root: (src) ->
-          path.resolve(".", src)
-
-        config: (config)  ->
-          builder = new preproc.Builder(config)
-
-        build: (from, to) ->
-          files[from] = to
-
+      paths.unshift(path.resolve("."))
+      
+      delete options.files
+      delete options.paths
+      
+      options.resolver = {
+        resolve: (p) ->
+          for base in paths
+            resolved = path.resolve(base, p)
+            if fs.existsSync(resolved)
+              return resolved
+          
+          throw "Unable to resolve '#{p}' to an existing path."
       }
+      preproc = require("preproc")
+      builder = new preproc.Builder(options)
 
-      readConf(builderAdapter)
-      console.log builder
+      if targets.length == 0
+        targets = getAllTargets()
+      
+      if OPTIONS["dist"]
+        builder.env.production  = true
+        builder.env.development = false
+        dir = "dist"
+      else
+        builder.env.development = true
+        builder.env.production  = false
+        dir = "dev"
+
+      for target in targets
+        for file in files
+          srcf = path.resolve("www", file)
+          dstf = path.resolve("targets", target, dir, "www", file)
+          builder.env.target = target
+
+          builder.build(srcf, dstf)
+        
+      
+
 
   # /*=================================
   # =           Watch Task            =
@@ -113,17 +166,31 @@ commands =
 
   watch:
     description: "Watch for changes on the source code and rebuild the application"
-    run: ->
+    run: (targets...)->
       commands.check.run()
+
+      config = readBuildConfig() or {}
+      extensions = []
+      for type, opts of (config.types or {})
+        for ext in (opts.extensions or [])
+          extname = if ext.slice(0,1) is "."
+              ext.slice(1)
+            else
+              ext
+
+          unless extname in extensions
+            extensions.push(quoteRe(extname))
+
+      extensionsRe = extensions.join("|")
 
       watch = require('node-watch')
       filter = (pattern, fn) ->
         (filename) ->
           fn filename  if pattern.test(filename)
       www = path.resolve('./www')
-      console.log clc.green("Watching for changes in #{www}")
-      watch './www', filter(/\.(coffee|html|js)$/, (filename) ->
-          commands.build.run()
+      console.log clc.green("Watching for source changes in #{www}")
+      watch './www', filter(new RegExp("\\.(#{extensionsRe})$"), (filename) ->
+          commands.build.run.apply(null, targets)
         )
 
 

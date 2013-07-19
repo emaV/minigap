@@ -29,6 +29,8 @@ module.exports = (builder) ->
       html:
         delimiters: ["<!--=", "-->"]
         extensions: ['.html']
-  
-  builder.build("www/js/APP_MAIN")
-  builder.build("www/index.html")
+    
+    files: [
+      "js/APP_MAIN", 
+      "index.html"
+    ]
