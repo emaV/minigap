@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
 ;
-var OPTIONS, clc, cmd, command, commands, fs, getAllTargets, mkdirp, ncp, nopt, options, path, quoteRe, readBuildConfig, run, sh,
-  __slice = [].slice,
-  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+var OPTIONS, clc, cmd, command, commands, fs, mkdirp, ncp, nopt, options, path, readBuildConfig, run, sh,
+  __slice = [].slice;
 
 nopt = require("nopt");
 
@@ -29,49 +28,7 @@ run = function() {
   return commands[cmd].run.apply(null, args);
 };
 
-readBuildConfig = function(options) {
-  var configPath, preproc, readConf;
-  if (options == null) {
-    options = {};
-  }
-  require("coffee-script");
-  configPath = path.resolve("./config/build");
-  readConf = require(configPath);
-  preproc = require('preproc');
-  readConf({
-    sourcePath: function(p) {
-      return path.resolve(".", p);
-    },
-    config: function(conf) {
-      var k, v, _results;
-      _results = [];
-      for (k in conf) {
-        v = conf[k];
-        _results.push(options[k] = v);
-      }
-      return _results;
-    }
-  });
-  return options;
-};
-
-quoteRe = function(str) {
-  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-};
-
-getAllTargets = function() {
-  var dirs, file, files, stats, _i, _len;
-  files = fs.readdirSync("targets");
-  dirs = [];
-  for (_i = 0, _len = files.length; _i < _len; _i++) {
-    file = files[_i];
-    stats = fs.statSync(path.resolve("targets", file));
-    if (stats.isDirectory()) {
-      dirs.push(file);
-    }
-  }
-  return dirs;
-};
+readBuildConfig = require("./config");
 
 commands = {
   "new": {
@@ -118,81 +75,21 @@ commands = {
   build: {
     description: "Build the application",
     run: function() {
-      var builder, dir, dstf, file, files, paths, preproc, srcf, target, targets, _i, _len, _results;
+      var config, targets;
       targets = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       commands.check.run();
-      options = readBuildConfig();
-      files = options.files || [];
-      paths = options.paths || [path.resolve("./lib")];
-      paths.unshift(path.resolve("."));
-      delete options.files;
-      delete options.paths;
-      options.resolver = {
-        resolve: function(p) {
-          var base, resolved, _i, _len;
-          for (_i = 0, _len = paths.length; _i < _len; _i++) {
-            base = paths[_i];
-            resolved = path.resolve(base, p);
-            if (fs.existsSync(resolved)) {
-              return resolved;
-            }
-          }
-          throw "Unable to resolve '" + p + "' to an existing path.";
-        }
-      };
-      preproc = require("preproc");
-      builder = new preproc.Builder(options);
-      if (targets.length === 0) {
-        targets = getAllTargets();
-      }
-      if (OPTIONS["dist"]) {
-        builder.env.production = true;
-        builder.env.development = false;
-        dir = "dist";
-      } else {
-        builder.env.development = true;
-        builder.env.production = false;
-        dir = "dev";
-      }
-      _results = [];
-      for (_i = 0, _len = targets.length; _i < _len; _i++) {
-        target = targets[_i];
-        _results.push((function() {
-          var _j, _len1, _results1;
-          _results1 = [];
-          for (_j = 0, _len1 = files.length; _j < _len1; _j++) {
-            file = files[_j];
-            srcf = path.resolve("www", file);
-            dstf = path.resolve("targets", target, dir, "www", file);
-            builder.env.target = target;
-            _results1.push(builder.build(srcf, dstf));
-          }
-          return _results1;
-        })());
-      }
-      return _results;
+      config = readBuildConfig();
+      return config.build();
     }
   },
   watch: {
     description: "Watch for changes on the source code and rebuild the application",
     run: function() {
-      var config, ext, extensions, extensionsRe, extname, filter, opts, targets, type, watch, www, _i, _len, _ref, _ref1;
+      var config, extensions, extensionsRe, filter, targets, watch, www;
       targets = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       commands.check.run();
-      config = readBuildConfig() || {};
-      extensions = [];
-      _ref = config.types || {};
-      for (type in _ref) {
-        opts = _ref[type];
-        _ref1 = opts.extensions || [];
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          ext = _ref1[_i];
-          extname = ext.slice(0, 1) === "." ? ext.slice(1) : ext;
-          if (__indexOf.call(extensions, extname) < 0) {
-            extensions.push(quoteRe(extname));
-          }
-        }
-      }
+      config = readBuildConfig();
+      extensions = config.knownExtensions();
       extensionsRe = extensions.join("|");
       watch = require('node-watch');
       filter = function(pattern, fn) {

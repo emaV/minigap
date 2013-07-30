@@ -1,6 +1,21 @@
 module.exports = (grunt) ->
+  fs = require("fs")
+
+  exec_conf = {
+    all:
+      command: "mocha test/* --compilers coffee:coffee-script --require should"
+  }
+
+  files = fs.readdirSync("test")
+  for file in files
+    if file.match /\.coffee$/
+      name = file.replace /\.coffee$/, ""
+      exec_conf[name] = {command: "mocha test/#{file} --compilers coffee:coffee-script --require should"}
+
   grunt.initConfig
     pkg: grunt.file.readJSON("package.json")
+
+    exec: exec_conf
 
     dist:
       src_path: './src'
@@ -13,7 +28,7 @@ module.exports = (grunt) ->
     cli:
       src_path: './src/cli'
       dst_path: 'bin'
-      src: [ 'cli.coffee' ]
+      src: [ 'cli.coffee', 'config.coffee' ]
       compile:
         options:
           bare: true
@@ -104,7 +119,8 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks "grunt-contrib-watch"
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-regex-replace'
-  
+  grunt.loadNpmTasks "grunt-exec"
+
 
   grunt.registerTask "build", ["dist", "cli", "generator"]
   grunt.registerTask "default", ["build"]
@@ -160,3 +176,11 @@ module.exports = (grunt) ->
 
     grunt.config.set 'regex-replace', opts.replace
     grunt.task.run 'regex-replace'
+
+
+
+  grunt.registerTask "test", "Run tests", () ->
+    if name = grunt.option("test")
+      grunt.task.run "exec:#{name}"
+    else
+      grunt.task.run "exec:all"

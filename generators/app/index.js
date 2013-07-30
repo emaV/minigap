@@ -22,6 +22,9 @@ MinigapGenerator.prototype.app = function app() {
   this.mkdir('www/css');
   this.mkdir('www/templates');
   this.mkdir('targets');
+  this.mkdir('targets/server');
+  this.mkdir('targets/server/dev');
+  this.mkdir('targets/server/dist');
   this.mkdir('targets/browser');
   this.mkdir('targets/browser/dev');
   this.mkdir('targets/browser/dist');

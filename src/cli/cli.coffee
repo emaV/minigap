@@ -15,36 +15,9 @@ OPTIONS = options
 run = (cmd, args...)->
   commands[cmd].run.apply(null, args)
 
-readBuildConfig = (options={})->
-  require("coffee-script")
-
-  configPath = path.resolve("./config/build")
-  readConf = require(configPath)
-  preproc = require('preproc')
-
-  readConf {
-    sourcePath: (p) ->
-      path.resolve(".", p)
-    config: (conf) ->
-      for k, v of conf
-        options[k] = v
-  }
-
-  options
+readBuildConfig = require("./config")
 
 
-quoteRe = (str) ->
-  str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")
-
-getAllTargets = () ->
-  files = fs.readdirSync("targets")
-  dirs = []
-  for file in files
-    stats = fs.statSync(path.resolve("targets", file))
-    if stats.isDirectory()
-      dirs.push(file)
-    
-  dirs
 
 commands =
 
@@ -114,50 +87,8 @@ commands =
     description: "Build the application"
     run: (targets...) ->
       commands.check.run()
-
-      options = readBuildConfig()
-
-      files = options.files or []
-      paths = options.paths or [ path.resolve("./lib") ]
-
-      paths.unshift(path.resolve("."))
-      
-      delete options.files
-      delete options.paths
-      
-      options.resolver = {
-        resolve: (p) ->
-          for base in paths
-            resolved = path.resolve(base, p)
-            if fs.existsSync(resolved)
-              return resolved
-          
-          throw "Unable to resolve '#{p}' to an existing path."
-      }
-      preproc = require("preproc")
-      builder = new preproc.Builder(options)
-
-      if targets.length == 0
-        targets = getAllTargets()
-      
-      if OPTIONS["dist"]
-        builder.env.production  = true
-        builder.env.development = false
-        dir = "dist"
-      else
-        builder.env.development = true
-        builder.env.production  = false
-        dir = "dev"
-
-      for target in targets
-        for file in files
-          srcf = path.resolve("www", file)
-          dstf = path.resolve("targets", target, dir, "www", file)
-          builder.env.target = target
-
-          builder.build(srcf, dstf)
-        
-      
+      config = readBuildConfig()
+      config.build()
 
 
   # /*=================================
@@ -169,18 +100,8 @@ commands =
     run: (targets...)->
       commands.check.run()
 
-      config = readBuildConfig() or {}
-      extensions = []
-      for type, opts of (config.types or {})
-        for ext in (opts.extensions or [])
-          extname = if ext.slice(0,1) is "."
-              ext.slice(1)
-            else
-              ext
-
-          unless extname in extensions
-            extensions.push(quoteRe(extname))
-
+      config       = readBuildConfig()
+      extensions   = config.knownExtensions()
       extensionsRe = extensions.join("|")
 
       watch = require('node-watch')
