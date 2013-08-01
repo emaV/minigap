@@ -26,12 +26,38 @@ module.exports = (grunt) ->
           bare: true
 
     cli:
-      src_path: './src/cli'
-      dst_path: 'bin'
-      src: [ 'cli.coffee', 'config.coffee' ]
-      compile:
-        options:
-          bare: true
+      coffee:
+        compile:
+          expand: true,
+          cwd: './src/cli',
+          src: ['**/*.coffee'],
+          dest: './bin',
+          ext: '.js'
+          options:
+            bare: true
+
+    # src_path: './src/cli'
+    # dst_path: 'bin'
+    # src: [ '**/*.coffee' ]
+    # compile:
+    #   options:
+    #     bare: true
+  
+    # cliLibs:
+    #   src_path: './src/cli/lib'
+    #   dst_path: 'bin/lib'
+    #   src: [ '*.coffee' ]
+    #   compile:
+    #     options:
+    #       bare: true
+
+    # cliTasks:
+    #   src_path: './src/cli/tasks'
+    #   dst_path: 'bin/tasks'
+    #   src: [ '*.coffee' ]
+    #   compile:
+    #     options:
+    #       bare: true
 
     generator:
       copy:
@@ -146,23 +172,8 @@ module.exports = (grunt) ->
     grunt.task.run 'coffee:compile'
 
   grunt.registerTask 'cli', 'cli', ->
-    SprocketsChain  = require "sprockets-chain"
-    path            = require 'path'
-    o               = grunt.config.get 'cli'
-    o.compile.files = o.compile.files || {}
-    
-    for src in o.src
-      grunt.file.setBase o.src_path
-      files = grunt.file.expand(src)
-
-      files.forEach (f, i)->
-        p = path.basename f, path.extname(f)
-        grunt.file.setBase __dirname
-        sc = new SprocketsChain()
-        sc.appendPath o.src_path
-        o.compile.files[path.join(__dirname, o.dst_path, p + '.js')] = sc.depChain(f)
-
-    grunt.config.set 'coffee', o
+    opts = grunt.config.get( 'cli' )
+    grunt.config.set 'coffee', opts.coffee
     grunt.task.run 'coffee:compile'
 
   grunt.registerTask 'generator', 'generator', ->

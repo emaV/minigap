@@ -1,13 +1,8 @@
-preproc   = require "preproc"
+preproc   = require 'preproc'
 path      = require "path"
 coffee    = require "coffee-script"
-_         = require "underscore"
-minimatch = require "minimatch"
-glob      = require("glob").sync
+_         = require "utils"
 
-
-_quoteRe = (str) ->
-  str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&")
 
 class Config
   constructor: () ->
@@ -33,14 +28,16 @@ class Config
     @deps[name] = opts
 
   knownExtensions: ->
-    self = @
-    exts = _.keys(@_builder.types.extensions)
-    _.map exts, (ext) ->
-      if ext.slice(0,1) is "."
-        ext = ext.slice(1)
-      ext
-      
-      _quoteRe(ext)
+    if !@_knownExtensions?
+      exts = _.keys(@_builder.types.extensions)
+      @_knownExtensions = _.map exts, (ext) ->
+        if ext.slice(0,1) is "."
+          ext = ext.slice(1)
+        ext
+        
+        _quoteRe(ext)
+
+    @_knownExtensions
 
   findInvalidTargets: (ts) ->
     validTs = @getAllTargets()
@@ -91,42 +88,48 @@ class Config
     ctx
 
   getFiles: (target, env) ->
+    @_files ?= {}
     base = @targets[target].dest[env]
-    return {} if !base?
-    files = {}
+    if !base?
+      throw "Destination path not defined for #{target}:#{env}"
 
-    # collects target+env related files decl
-    for name, opts of @targets
-      if minimatch(target, name)
-        if opts.files?
-          _.extend(files, opts.files)
-    
-    # resolves globs
-    res = {}
-    for k, v of files
-      if k.indexOf("*") == -1
-        res[k] = path.join(base, v)
-      else
-        fixedPartIdx = k.split("*")[0].lastIndexOf(path.sep)
-        globres = glob(k)
-        
-        destBase = v
-        destExt = null
-        if _.isArray(destBase)
-          destBase = v[0]
-          destExt = v[1]
-        
-        for f in globres
-          dest = f.slice(fixedPartIdx)
-          if destExt?
-            bn = path.basename(dest)
-            dn = path.dirname(dest)
+    if !@_files["#{target}:#{env}"]
+      files = {}
 
-            noExt = bn.slice(0, bn.indexOf("."))
-            dest =  path.join dn, "#{noExt}.#{destExt}"
-          res[f] = path.join(base, destBase, dest)
- 
-    res
+      # collects target+env related files decl
+      for name, opts of @targets
+        if minimatch(target, name)
+          if opts.files?
+            _.extend(files, opts.files)
+      
+      # resolves globs
+      res = {}
+      for k, v of files
+        if k.indexOf("*") == -1
+          res[k] = path.join(base, v)
+        else
+          fixedPartIdx = k.split("*")[0].lastIndexOf(path.sep)
+          globres = glob(k)
+          
+          destBase = v
+          destExt = null
+          if _.isArray(destBase)
+            destBase = v[0]
+            destExt = v[1]
+          
+          for f in globres
+            dest = f.slice(fixedPartIdx)
+            if destExt?
+              bn = path.basename(dest)
+              dn = path.dirname(dest)
+
+              noExt = bn.slice(0, bn.indexOf("."))
+              dest =  path.join dn, "#{noExt}.#{destExt}"
+            res[f] = path.join(base, destBase, dest)
+   
+      @_files["#{target}:#{env}"] = res
+    @_files["#{target}:#{env}"]
+
 
   getSources: (envs, targets) ->
     ret = {}
@@ -135,6 +138,11 @@ class Config
         _.extend(ret, @getFiles(t,e))
     
     _.keys(ret)
+
+
+  hasSource: (target, env, filename) ->
+    _.has(@getFiles(target,env), filename)
+
 
 readBuildConfig = (p)->
   configPath = path.resolve(p or "./config")
