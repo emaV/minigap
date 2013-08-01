@@ -18,19 +18,11 @@ var MinigapGenerator = module.exports = function MinigapGenerator(args, options,
 util.inherits(MinigapGenerator, yeoman.generators.Base);
 
 MinigapGenerator.prototype.app = function app() {
-  this.mkdir('www');
-  this.mkdir('www/css');
-  this.mkdir('www/templates');
-  this.mkdir('targets');
-  this.mkdir('targets/server');
-  this.mkdir('targets/server/dev');
-  this.mkdir('targets/server/dist');
-  this.mkdir('targets/browser');
-  this.mkdir('targets/browser/dev');
-  this.mkdir('targets/browser/dist');
-  
-  this.copy('app.css', "www/css/app.css");
-  this.copy('index.html', "www/index.html");
+  this.mkdir('app');
+  this.mkdir('app/css');
+  this.mkdir('app/templates');
+  this.copy('app.css', "app/css/app.css");
+  this.copy('layout.html', "app/layout.html");
   this.write('.minigap', '');
   if (this.options['coffee']) {
     this.directory('coffee', './');  

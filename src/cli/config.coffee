@@ -42,7 +42,39 @@ class Config
       
       _quoteRe(ext)
 
-  _context: (target, env) ->
+  findInvalidTargets: (ts) ->
+    validTs = @getAllTargets()
+    invalidTs = []
+    for t in ts
+      if not _.contains(validTs, t)
+        invalidTs.push(t)
+
+    invalidTs
+  
+  findInvalidEnvs:(es)->
+    validEs = @getAllEnvironments()
+    invalidEs = []
+    for e in es
+      if not _.contains(validEs, e)
+        invalidEs.push(e)
+
+    invalidEs
+  
+  getAllEnvironments: () ->
+    _.reject _.keys(@envs), (t) ->
+      t.indexOf("*") != -1
+
+  getAllTargets: () ->
+    _.reject _.keys(@targets), (t) ->
+      t.indexOf("*") != -1
+
+  getDest: (target, env) ->
+    @targets[target].dest[env]
+
+  getBuilder: () ->
+    @_builder
+
+  getContext: (target, env) ->
     ctx = {}
 
     for name, opts of @envs
@@ -58,7 +90,7 @@ class Config
     ctx.env = env
     ctx
 
-  _files: (target, env) ->
+  getFiles: (target, env) ->
     base = @targets[target].dest[env]
     return {} if !base?
     files = {}
@@ -96,42 +128,13 @@ class Config
  
     res
 
-  build: (target, env) ->
-    # if targets.length == 0
-    #   targets = getAllTargets()
+  getSources: (envs, targets) ->
+    ret = {}
+    for t in targets
+      for e in envs
+        _.extend(ret, @getFiles(t,e))
     
-    # if OPTIONS["dist"]
-    #   builder.env.production  = true
-    #   builder.env.development = false
-    #   dir = "dist"
-    # else
-    #   builder.env.development = true
-    #   builder.env.production  = false
-    #   dir = "dev"
-
-    # error = false
-    # for target in targets
-    #   if error
-    #     break
-      
-    #   for srcfile, dstfile of files
-    #     srcf = path.resolve("www", srcfile)
-    #     dstf = path.resolve("targets", target, dir, "www", dstfile)
-    #     builder.env.target = target
-    #     try
-    #       builder.build(srcf, dstf)
-    
-    #     catch e
-    #       if e.type is "PreprocessorError"
-    #         console.log ""
-    #         console.log "PreprocessorError: #{e.message}"
-    #         console.log "  at #{e.path}:#{e.line}:#{e.col}"
-    #         console.log ""
-    #         error = true
-    #         break
-    
-    #       else
-    #         throw e
+    _.keys(ret)
 
 readBuildConfig = (p)->
   configPath = path.resolve(p or "./config")

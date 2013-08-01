@@ -65,13 +65,13 @@ module.exports = (grunt) ->
               flags: 'g'
             },
             {
-              search: '#= include <lib/minigap.js>;'
-              replace: '//= include <lib/minigap.js>'
+              search: '#= include "minigap.js";'
+              replace: '//= include "minigap.js"'
               flags: 'g'
             },
             {
-              search: '#= if development;'
-              replace: '//= if development'
+              search: '#= if env == "dev";'
+              replace: '//= if env == "dev"'
               flags: 'g'
             },
             {
@@ -94,13 +94,13 @@ module.exports = (grunt) ->
               flags: 'g'
             },
             {
-              search: '`#= include <lib/minigap.js>`'
-              replace: '#= include <lib/minigap.js>'
+              search: '`#= include "minigap.js"`'
+              replace: '#= include "minigap.js"'
               flags: 'g'
             },
             {
-              search: '`#= if development`'
-              replace: '#= if development'
+              search: '`#= if env == "dev"`'
+              replace: '#= if env == "dev"'
               flags: 'g'
             },
             {

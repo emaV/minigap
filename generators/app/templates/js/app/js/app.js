@@ -1,5 +1,5 @@
-//= include <lib/minigap.js>
-//= if development
+//= include "minigap.js"
+//= if env == "dev"
 Minigap.origin('devSocket', new SocketOrigin("//= print server/sock"));
 
 Minigap.controller({

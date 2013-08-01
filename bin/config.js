@@ -60,7 +60,53 @@ Config = (function() {
     });
   };
 
-  Config.prototype._context = function(target, env) {
+  Config.prototype.findInvalidTargets = function(ts) {
+    var invalidTs, t, validTs, _i, _len;
+    validTs = this.getAllTargets();
+    invalidTs = [];
+    for (_i = 0, _len = ts.length; _i < _len; _i++) {
+      t = ts[_i];
+      if (!_.contains(validTs, t)) {
+        invalidTs.push(t);
+      }
+    }
+    return invalidTs;
+  };
+
+  Config.prototype.findInvalidEnvs = function(es) {
+    var e, invalidEs, validEs, _i, _len;
+    validEs = this.getAllEnvironments();
+    invalidEs = [];
+    for (_i = 0, _len = es.length; _i < _len; _i++) {
+      e = es[_i];
+      if (!_.contains(validEs, e)) {
+        invalidEs.push(e);
+      }
+    }
+    return invalidEs;
+  };
+
+  Config.prototype.getAllEnvironments = function() {
+    return _.reject(_.keys(this.envs), function(t) {
+      return t.indexOf("*") !== -1;
+    });
+  };
+
+  Config.prototype.getAllTargets = function() {
+    return _.reject(_.keys(this.targets), function(t) {
+      return t.indexOf("*") !== -1;
+    });
+  };
+
+  Config.prototype.getDest = function(target, env) {
+    return this.targets[target].dest[env];
+  };
+
+  Config.prototype.getBuilder = function() {
+    return this._builder;
+  };
+
+  Config.prototype.getContext = function(target, env) {
     var ctx, name, opts, _ref, _ref1;
     ctx = {};
     _ref = this.envs;
@@ -84,7 +130,7 @@ Config = (function() {
     return ctx;
   };
 
-  Config.prototype._files = function(target, env) {
+  Config.prototype.getFiles = function(target, env) {
     var base, bn, dest, destBase, destExt, dn, f, files, fixedPartIdx, globres, k, name, noExt, opts, res, v, _i, _len, _ref;
     base = this.targets[target].dest[env];
     if (base == null) {
@@ -130,7 +176,18 @@ Config = (function() {
     return res;
   };
 
-  Config.prototype.build = function(target, env) {};
+  Config.prototype.getSources = function(envs, targets) {
+    var e, ret, t, _i, _j, _len, _len1;
+    ret = {};
+    for (_i = 0, _len = targets.length; _i < _len; _i++) {
+      t = targets[_i];
+      for (_j = 0, _len1 = envs.length; _j < _len1; _j++) {
+        e = envs[_j];
+        _.extend(ret, this.getFiles(t, e));
+      }
+    }
+    return _.keys(ret);
+  };
 
   return Config;
 

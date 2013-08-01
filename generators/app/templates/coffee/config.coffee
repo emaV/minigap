@@ -19,28 +19,31 @@ module.exports = (config) ->
     Targets
   ###
 
-  config.target "*",
+  config.target "server",
     files:
-      "js/app.coffee": "js/app.coffee"
-      "index.html": "index.html"
+      "app/js/app.coffee":  "server.js"
+
+    dest:
+      dev:  "dev"
+      dist: "dist"
+
+    run:  "server.js"
 
   config.target "browser",
+    files:
+      "app/js/app.coffee":  "js/app.js"
+      "app/layout.html":  "index.html"
+
     dest:
-      dev:  "targets/browser/dev"
-      dist: "targets/browser/dist"
-    run:  "server.js"
-  
-  config.target "server",
-    dest:
-      dev:  "targets/server/dev"
-      dist: "targets/server/dist"
-    run:  "server.js"
-  
+      dev:  "dev/public"
+      dist: "dist/public"
+
   ###
     Dependencies
   ###
 
-  config.dep "jquery",
-      v: "2.0"
+  ###
+  config.dep "handlebars",
       base: 'dist'
-      files: [ "jquery.js" ]
+      files: [ "handlebars.runtime.js" ]
+  ###

@@ -18,33 +18,34 @@ module.exports = function(config) {
     Targets
   */
 
-  config.target("*", {
-    files: {
-      "js/app.js": "js/app.js",
-      "index.html": "index.html"
-    }
-  });
-  config.target("browser", {
-    dest: {
-      dev: "targets/browser/dev",
-      dist: "targets/browser/dist"
-    },
-    run: "server.js"
-  });
   config.target("server", {
+    files: {
+      "app/js/app.js": "server.js"
+    },
     dest: {
-      dev: "targets/server/dev",
-      dist: "targets/server/dist"
+      dev: "dev",
+      dist: "dist"
     },
     run: "server.js"
+  });
+  return config.target("browser", {
+    files: {
+      "app/js/app.js": "js/app.js",
+      "app/layout.html": "index.html"
+    },
+    dest: {
+      dev: "dev/public",
+      dist: "dist/public"
+    }
   });
   /*
     Dependencies
   */
 
-  return config.dep("jquery", {
-    v: "2.0",
-    base: 'dist',
-    files: ["jquery.js"]
-  });
+  /*
+  config.dep "handlebars",
+      base: 'dist'
+      files: [ "handlebars.runtime.js" ]
+  */
+
 };

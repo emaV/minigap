@@ -19,28 +19,31 @@ module.exports = (config) ->
     Targets
   ###
 
-  config.target "*",
+  config.target "server",
     files:
-      "js/APP_MAIN": "js/APP_MAIN"
-      "index.html": "index.html"
+      "app/js/APP_MAIN":  "server.js"
+
+    dest:
+      dev:  "dev"
+      dist: "dist"
+
+    run:  "server.js"
 
   config.target "browser",
+    files:
+      "app/js/APP_MAIN":  "js/app.js"
+      "app/layout.html":  "index.html"
+
     dest:
-      dev:  "targets/browser/dev"
-      dist: "targets/browser/dist"
-    run:  "server.js"
-  
-  config.target "server",
-    dest:
-      dev:  "targets/server/dev"
-      dist: "targets/server/dist"
-    run:  "server.js"
-  
+      dev:  "dev/public"
+      dist: "dist/public"
+
   ###
     Dependencies
   ###
 
-  config.dep "jquery",
-      v: "2.0"
+  ###
+  config.dep "handlebars",
       base: 'dist'
-      files: [ "jquery.js" ]
+      files: [ "handlebars.runtime.js" ]
+  ###

@@ -1,12 +1,12 @@
-`#= include <lib/minigap.js>`
+#= include "minigap.js"
 
-`#= if development`
+#= if env == "dev"
 Minigap.origin('devSocket', new SocketOrigin("#= print server/sock"))
 
 Minigap.controller 
     'devSocket:refresh' : ->
 		window.location.reload()
 
-`#= end`
+#= end
 
 Minigap.start()
