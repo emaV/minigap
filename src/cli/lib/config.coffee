@@ -1,25 +1,21 @@
-preproc   = require 'preproc'
-path      = require "path"
 coffee    = require "coffee-script"
-_         = require "utils"
-
+_         = require "./utils"
+Bundle    = require "./bundle"
 
 class Config
   constructor: () ->
+    @bundles = {}
     @targets = {}
     @envs = {}
     @deps = {}
-    @_builder = new preproc.Builder(libs: [path.resolve("./lib")])
+    @builderConfig = {}
 
   env:     (name, opts) ->
     @envs[name] ||= {}
     _.extend(@envs[name], opts)
 
   builder: (opts) ->
-    if opts
-      @_builder.config(opts)
-    
-    @_builder
+    _.extend(@builderConfig, opts)
 
   target:  (name, opts) ->
     @targets[name] = opts
@@ -27,89 +23,33 @@ class Config
   dep:    (name, opts) ->
     @deps[name] = opts
 
-  knownExtensions: ->
-    if !@_knownExtensions?
-      exts = _.keys(@_builder.types.extensions)
-      @_knownExtensions = _.map exts, (ext) ->
-        if ext.slice(0,1) is "."
-          ext = ext.slice(1)
-        ext
-        
-        _quoteRe(ext)
-
-    @_knownExtensions
-
-  findInvalidTargets: (ts) ->
-    validTs = @getAllTargets()
-    invalidTs = []
-    for t in ts
-      if not _.contains(validTs, t)
-        invalidTs.push(t)
-
-    invalidTs
-  
-  findInvalidEnvs:(es)->
-    validEs = @getAllEnvironments()
-    invalidEs = []
-    for e in es
-      if not _.contains(validEs, e)
-        invalidEs.push(e)
-
-    invalidEs
-  
-  getAllEnvironments: () ->
-    _.reject _.keys(@envs), (t) ->
-      t.indexOf("*") != -1
-
-  getAllTargets: () ->
-    _.reject _.keys(@targets), (t) ->
-      t.indexOf("*") != -1
-
-  getDest: (target, env) ->
+  getDestination: (target, env) ->
     @targets[target].dest[env]
 
-  getBuilder: () ->
-    @_builder
-
-  getContext: (target, env) ->
-    ctx = {}
-
-    for name, opts of @envs
-      if minimatch(env, name)
-        _.extend(ctx, opts)
-
-    for name, opts of @targets
-      if minimatch(target, name)
-        if opts.env?
-          _.extend(ctx, opts.env)
-
-    ctx.target = target
-    ctx.env = env
-    ctx
-
-  getFiles: (target, env) ->
+  getFiles: (mode, target, env) ->
     @_files ?= {}
-    base = @targets[target].dest[env]
-    if !base?
-      throw "Destination path not defined for #{target}:#{env}"
 
-    if !@_files["#{target}:#{env}"]
+    base = @getDestination(target, env)
+    if !base?
+      throw "Destination root not defined for #{target}:#{env}"
+
+    if !@_files["#{mode}:#{target}:#{env}"]
       files = {}
 
-      # collects target+env related files decl
+      # collects target+env+mode related files decl
       for name, opts of @targets
-        if minimatch(target, name)
-          if opts.files?
-            _.extend(files, opts.files)
+        if _.minimatch(target, name)
+          if opts[mode]?
+            _.extend(files, opts[mode])
       
       # resolves globs
       res = {}
       for k, v of files
         if k.indexOf("*") == -1
-          res[k] = path.join(base, v)
+          res[k] = _.path.join(base, v)
         else
-          fixedPartIdx = k.split("*")[0].lastIndexOf(path.sep)
-          globres = glob(k)
+          fixedPartIdx = k.split("*")[0].lastIndexOf(_.path.sep)
+          globres = _.glob(k)
           
           destBase = v
           destExt = null
@@ -120,35 +60,58 @@ class Config
           for f in globres
             dest = f.slice(fixedPartIdx)
             if destExt?
-              bn = path.basename(dest)
-              dn = path.dirname(dest)
+              bn = _.path.basename(dest)
+              dn = _.path.dirname(dest)
 
               noExt = bn.slice(0, bn.indexOf("."))
-              dest =  path.join dn, "#{noExt}.#{destExt}"
-            res[f] = path.join(base, destBase, dest)
+              dest =  _.path.join dn, "#{noExt}.#{destExt}"
+            res[f] = _.path.join(base, destBase, dest)
    
-      @_files["#{target}:#{env}"] = res
-    @_files["#{target}:#{env}"]
+      @_files["#{mode}:#{target}:#{env}"] = res
+    @_files["#{mode}:#{target}:#{env}"]
+
+  getContext: (target, env) ->
+    context = {}
+
+    for name, opts of @envs
+      if _.minimatch(env, name)
+        _.extend(context, opts)
+
+    for name, opts of @targets
+      if _.minimatch(target, name)
+        if opts.env?
+          _.extend(context, opts.env)
+
+    context.target = target
+    context.env = env
+
+  availableTargets: () ->
+    _.reject _.keys(@targets), (t) ->
+      t.indexOf("*") != -1
+
+  availableEnvironments: () ->
+    _.reject _.keys(@envs), (t) ->
+      t.indexOf("*") != -1
+
+  getBundle: (target, env) ->
+    bid = "#{target}:#{env}"
+
+    if not @bundles[bid]?
+      @bundles[bid] = new Bundle
+        copy: @getFiles("copy", target, env)
+        build: @getFiles("build", target, env)
+        env: @getContext(target, env)
+        dest: @getDestination(target, env)
+        builderConfig: @builderConfig
+
+    @bundles[bid]
 
 
-  getSources: (envs, targets) ->
-    ret = {}
-    for t in targets
-      for e in envs
-        _.extend(ret, @getFiles(t,e))
-    
-    _.keys(ret)
 
-
-  hasSource: (target, env, filename) ->
-    _.has(@getFiles(target,env), filename)
-
-
-readBuildConfig = (p)->
-  configPath = path.resolve(p or "./config")
-  readConf = require(configPath)
-  config = new Config()
-  readConf(config)
-  config
+readBuildConfig = (path)->
+  readConf  = require(_.path.resolve(path or "./config"))
+  configDsl = new Config()
+  readConf(configDsl)
+  configDsl
 
 module.exports = readBuildConfig

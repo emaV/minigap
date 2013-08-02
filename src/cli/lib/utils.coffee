@@ -47,6 +47,12 @@ _.copyFileSync = (srcFile, destFile) ->
   BUF_LENGTH = 64*1024
   buff = new Buffer(BUF_LENGTH)
   fdr = fs.openSync(srcFile, 'r')
+
+  destDir = path.dirname(destFile)
+  if not fs.existsSync(destDir)
+    if not _.mkdirp(destDir)
+      throw "Can't create #{destDir}"
+
   fdw = fs.openSync(destFile, 'w')
   bytesRead = 1
   pos = 0

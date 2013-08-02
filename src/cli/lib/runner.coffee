@@ -6,8 +6,9 @@ class Runner
     @h = _
 
   helper: (name, func) ->
+    self = @
     @h[name] = (args...) ->
-      func.apply(@, args)
+      func.apply(self, args)
 
   task: (name, description, args, options, run) ->
     @tasks[name] = {description: description, run: run, arguments: args, options: options}

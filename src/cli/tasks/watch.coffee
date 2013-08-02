@@ -1,7 +1,15 @@
-Builder = require "../lib/builder"
-
 module.exports = (runner) ->
   runner.task "watch", "Watch for changes on the source code and rebuild the changed sources only", {}, {}, (targets...)->
     @h.check()
-    builder = new Builder(targets, @options)
-    builder.watch()
+    
+    envs    = if @options.env then options.env.split(",") else []
+    config  = @h.readBuildConfig()
+    targets = @h.parseTargets(config, targets)
+    envs    = @h.parseEnvs(config, envs)
+
+    console.log _.clc.green("Watching for changes ..")
+    @h.watch "./*", (filename) ->
+      for target in targets
+        for env in envs
+          bundle = config.getBundle(target, env)
+          bundle.changed(filename)

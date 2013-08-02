@@ -67,10 +67,16 @@ _.deleteFolderRecursive = function(path) {
 };
 
 _.copyFileSync = function(srcFile, destFile) {
-  var BUF_LENGTH, buff, bytesRead, fdr, fdw, pos;
+  var BUF_LENGTH, buff, bytesRead, destDir, fdr, fdw, pos;
   BUF_LENGTH = 64 * 1024;
   buff = new Buffer(BUF_LENGTH);
   fdr = fs.openSync(srcFile, 'r');
+  destDir = path.dirname(destFile);
+  if (!fs.existsSync(destDir)) {
+    if (!_.mkdirp(destDir)) {
+      throw "Can't create " + destDir;
+    }
+  }
   fdw = fs.openSync(destFile, 'w');
   bytesRead = 1;
   pos = 0;

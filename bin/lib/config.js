@@ -1,21 +1,18 @@
-var Config, coffee, path, preproc, readBuildConfig, _;
-
-preproc = require('preproc');
-
-path = require("path");
+var Bundle, Config, coffee, readBuildConfig, _;
 
 coffee = require("coffee-script");
 
-_ = require("utils");
+_ = require("./utils");
+
+Bundle = require("./bundle");
 
 Config = (function() {
   function Config() {
+    this.bundles = {};
     this.targets = {};
     this.envs = {};
     this.deps = {};
-    this._builder = new preproc.Builder({
-      libs: [path.resolve("./lib")]
-    });
+    this.builderConfig = {};
   }
 
   Config.prototype.env = function(name, opts) {
@@ -25,10 +22,7 @@ Config = (function() {
   };
 
   Config.prototype.builder = function(opts) {
-    if (opts) {
-      this._builder.config(opts);
-    }
-    return this._builder;
+    return _.extend(this.builderConfig, opts);
   };
 
   Config.prototype.target = function(name, opts) {
@@ -39,108 +33,27 @@ Config = (function() {
     return this.deps[name] = opts;
   };
 
-  Config.prototype.knownExtensions = function() {
-    var exts;
-    if (this._knownExtensions == null) {
-      exts = _.keys(this._builder.types.extensions);
-      this._knownExtensions = _.map(exts, function(ext) {
-        if (ext.slice(0, 1) === ".") {
-          ext = ext.slice(1);
-        }
-        ext;
-        return _quoteRe(ext);
-      });
-    }
-    return this._knownExtensions;
-  };
-
-  Config.prototype.findInvalidTargets = function(ts) {
-    var invalidTs, t, validTs, _i, _len;
-    validTs = this.getAllTargets();
-    invalidTs = [];
-    for (_i = 0, _len = ts.length; _i < _len; _i++) {
-      t = ts[_i];
-      if (!_.contains(validTs, t)) {
-        invalidTs.push(t);
-      }
-    }
-    return invalidTs;
-  };
-
-  Config.prototype.findInvalidEnvs = function(es) {
-    var e, invalidEs, validEs, _i, _len;
-    validEs = this.getAllEnvironments();
-    invalidEs = [];
-    for (_i = 0, _len = es.length; _i < _len; _i++) {
-      e = es[_i];
-      if (!_.contains(validEs, e)) {
-        invalidEs.push(e);
-      }
-    }
-    return invalidEs;
-  };
-
-  Config.prototype.getAllEnvironments = function() {
-    return _.reject(_.keys(this.envs), function(t) {
-      return t.indexOf("*") !== -1;
-    });
-  };
-
-  Config.prototype.getAllTargets = function() {
-    return _.reject(_.keys(this.targets), function(t) {
-      return t.indexOf("*") !== -1;
-    });
-  };
-
-  Config.prototype.getDest = function(target, env) {
+  Config.prototype.getDestination = function(target, env) {
     return this.targets[target].dest[env];
   };
 
-  Config.prototype.getBuilder = function() {
-    return this._builder;
-  };
-
-  Config.prototype.getContext = function(target, env) {
-    var ctx, name, opts, _ref, _ref1;
-    ctx = {};
-    _ref = this.envs;
-    for (name in _ref) {
-      opts = _ref[name];
-      if (minimatch(env, name)) {
-        _.extend(ctx, opts);
-      }
-    }
-    _ref1 = this.targets;
-    for (name in _ref1) {
-      opts = _ref1[name];
-      if (minimatch(target, name)) {
-        if (opts.env != null) {
-          _.extend(ctx, opts.env);
-        }
-      }
-    }
-    ctx.target = target;
-    ctx.env = env;
-    return ctx;
-  };
-
-  Config.prototype.getFiles = function(target, env) {
+  Config.prototype.getFiles = function(mode, target, env) {
     var base, bn, dest, destBase, destExt, dn, f, files, fixedPartIdx, globres, k, name, noExt, opts, res, v, _i, _len, _ref;
     if (this._files == null) {
       this._files = {};
     }
-    base = this.targets[target].dest[env];
+    base = this.getDestination(target, env);
     if (base == null) {
-      throw "Destination path not defined for " + target + ":" + env;
+      throw "Destination root not defined for " + target + ":" + env;
     }
-    if (!this._files["" + target + ":" + env]) {
+    if (!this._files["" + mode + ":" + target + ":" + env]) {
       files = {};
       _ref = this.targets;
       for (name in _ref) {
         opts = _ref[name];
-        if (minimatch(target, name)) {
-          if (opts.files != null) {
-            _.extend(files, opts.files);
+        if (_.minimatch(target, name)) {
+          if (opts[mode] != null) {
+            _.extend(files, opts[mode]);
           }
         }
       }
@@ -148,10 +61,10 @@ Config = (function() {
       for (k in files) {
         v = files[k];
         if (k.indexOf("*") === -1) {
-          res[k] = path.join(base, v);
+          res[k] = _.path.join(base, v);
         } else {
-          fixedPartIdx = k.split("*")[0].lastIndexOf(path.sep);
-          globres = glob(k);
+          fixedPartIdx = k.split("*")[0].lastIndexOf(_.path.sep);
+          globres = _.glob(k);
           destBase = v;
           destExt = null;
           if (_.isArray(destBase)) {
@@ -162,48 +75,80 @@ Config = (function() {
             f = globres[_i];
             dest = f.slice(fixedPartIdx);
             if (destExt != null) {
-              bn = path.basename(dest);
-              dn = path.dirname(dest);
+              bn = _.path.basename(dest);
+              dn = _.path.dirname(dest);
               noExt = bn.slice(0, bn.indexOf("."));
-              dest = path.join(dn, "" + noExt + "." + destExt);
+              dest = _.path.join(dn, "" + noExt + "." + destExt);
             }
-            res[f] = path.join(base, destBase, dest);
+            res[f] = _.path.join(base, destBase, dest);
           }
         }
       }
-      this._files["" + target + ":" + env] = res;
+      this._files["" + mode + ":" + target + ":" + env] = res;
     }
-    return this._files["" + target + ":" + env];
+    return this._files["" + mode + ":" + target + ":" + env];
   };
 
-  Config.prototype.getSources = function(envs, targets) {
-    var e, ret, t, _i, _j, _len, _len1;
-    ret = {};
-    for (_i = 0, _len = targets.length; _i < _len; _i++) {
-      t = targets[_i];
-      for (_j = 0, _len1 = envs.length; _j < _len1; _j++) {
-        e = envs[_j];
-        _.extend(ret, this.getFiles(t, e));
+  Config.prototype.getContext = function(target, env) {
+    var context, name, opts, _ref, _ref1;
+    context = {};
+    _ref = this.envs;
+    for (name in _ref) {
+      opts = _ref[name];
+      if (_.minimatch(env, name)) {
+        _.extend(context, opts);
       }
     }
-    return _.keys(ret);
+    _ref1 = this.targets;
+    for (name in _ref1) {
+      opts = _ref1[name];
+      if (_.minimatch(target, name)) {
+        if (opts.env != null) {
+          _.extend(context, opts.env);
+        }
+      }
+    }
+    context.target = target;
+    return context.env = env;
   };
 
-  Config.prototype.hasSource = function(target, env, filename) {
-    return _.has(this.getFiles(target, env), filename);
+  Config.prototype.availableTargets = function() {
+    return _.reject(_.keys(this.targets), function(t) {
+      return t.indexOf("*") !== -1;
+    });
+  };
+
+  Config.prototype.availableEnvironments = function() {
+    return _.reject(_.keys(this.envs), function(t) {
+      return t.indexOf("*") !== -1;
+    });
+  };
+
+  Config.prototype.getBundle = function(target, env) {
+    var bid;
+    bid = "" + target + ":" + env;
+    if (this.bundles[bid] == null) {
+      this.bundles[bid] = new Bundle({
+        copy: this.getFiles("copy", target, env),
+        build: this.getFiles("build", target, env),
+        env: this.getContext(target, env),
+        dest: this.getDestination(target, env),
+        builderConfig: this.builderConfig
+      });
+    }
+    return this.bundles[bid];
   };
 
   return Config;
 
 })();
 
-readBuildConfig = function(p) {
-  var config, configPath, readConf;
-  configPath = path.resolve(p || "./config");
-  readConf = require(configPath);
-  config = new Config();
-  readConf(config);
-  return config;
+readBuildConfig = function(path) {
+  var configDsl, readConf;
+  readConf = require(_.path.resolve(path || "./config"));
+  configDsl = new Config();
+  readConf(configDsl);
+  return configDsl;
 };
 
 module.exports = readBuildConfig;

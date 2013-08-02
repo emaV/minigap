@@ -12,10 +12,12 @@ Runner = (function() {
   }
 
   Runner.prototype.helper = function(name, func) {
+    var self;
+    self = this;
     return this.h[name] = function() {
       var args;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      return func.apply(this, args);
+      return func.apply(self, args);
     };
   };
 
