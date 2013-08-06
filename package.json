@@ -29,7 +29,7 @@
     "mkdirp": "~0.3.5",
     "touch": "~0.0.2",
     "yeoman-generator": "~0.12.3",
-    "preproc": "~0.1.7",
+    "preproc": "~0.1.8",
     "node-watch": "~0.3.4",
     "underscore": "~1.5.1",
     "coffee-script": "~1.6.3",

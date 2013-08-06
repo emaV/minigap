@@ -3,16 +3,34 @@ preproc   = require 'preproc'
 
 class Bundle
 
-  constructor: (options)->
+  constructor: (@config, @target, @env)->
+    @_reset()
+    @deps = @_dependentMap()
+
+
+  _reset: () ->
+    t1 = new Date()
+    options =
+      copy: @config.getFiles("copy", @target, @env)
+      build: @config.getFiles("build", @target, @env)
+      env: @config.getContext(@target, @env)
+      dest: @config.getDestination(@target, @env)
+      builderConfig: @config.builderConfig
+
     @filesToBeCopied = options.copy
     @filesToBeBuilt  = options.build
     @context         = options.env
-    @dest            = options.dest
+    @dest            = options.dest    
     @builder         = new preproc.Builder(libs: [_.path.resolve("./lib")])
-
     @builder.config(options.builderConfig)
-    @builder.env = @context
+    @builder.env     = @context
+    t2 = new Date()
 
+    dif = t1.getTime() - t2.getTime()
+    Seconds_from_T1_to_T2 = dif / 1000
+    Seconds_Between_Dates = Math.abs(Seconds_from_T1_to_T2)
+    
+    console.log "Reset takes: #{Seconds_Between_Dates} s"
 
   build: () ->
     for srcf, dstf of @filesToBeCopied
@@ -22,7 +40,45 @@ class Bundle
       @_buildFile(srcf, dstf)
     
   changed: (filename) ->
-    throw "Not implemented yet"
+    
+    filename = _.path.resolve(filename)
+    if !_.fs.existsSync(filename)
+      console.log "Deleted #{filename}"
+    
+    else
+      @_reset()
+      
+      if _.has(@filesToBeCopied, filename)
+        console.log "Need to be re-copied: #{filename}"
+
+      else if _.has(@deps, filename)
+        console.log "Need to be rebuilt: #{@deps[filename]}"    
+        
+        # remap dependencies
+        @deps = @_dependentMap()
+
+      else
+        console.log "Noting to do with #{filename}"
+
+
+  _dependentMap: () ->
+    if not @_dmap?
+      @_dmap = {}
+      for src in _.keys(@filesToBeBuilt)
+        deps = @builder.dependenciesOf(src)
+        dt = @builder.dependencyTree(src)
+
+        deps.push(src)
+
+        for dep in deps
+          @_dmap[dep] ?= []
+          @_dmap[dep].push(src)
+
+
+      for k, v of @_dmap
+        @_dmap[k] = _.uniq(v)
+    
+    @_dmap
 
   _buildFile: (srcf, dstf) ->
     try
@@ -42,8 +98,6 @@ class Bundle
   
   _copyFile: (srcf, dstf) ->
     _.copyFileSync(srcf, dstf)
-
-
 
   # constructor: (@config, @target, @env) ->
   #   @dest = @config.targets[target].dest[env]

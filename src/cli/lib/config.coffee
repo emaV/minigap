@@ -27,48 +27,44 @@ class Config
     @targets[target].dest[env]
 
   getFiles: (mode, target, env) ->
-    @_files ?= {}
-
     base = @getDestination(target, env)
     if !base?
       throw "Destination root not defined for #{target}:#{env}"
 
-    if !@_files["#{mode}:#{target}:#{env}"]
-      files = {}
+    files = {}
 
-      # collects target+env+mode related files decl
-      for name, opts of @targets
-        if _.minimatch(target, name)
-          if opts[mode]?
-            _.extend(files, opts[mode])
-      
-      # resolves globs
-      res = {}
-      for k, v of files
-        if k.indexOf("*") == -1
-          res[k] = _.path.join(base, v)
-        else
-          fixedPartIdx = k.split("*")[0].lastIndexOf(_.path.sep)
-          globres = _.glob(k)
-          
-          destBase = v
-          destExt = null
-          if _.isArray(destBase)
-            destBase = v[0]
-            destExt = v[1]
-          
-          for f in globres
-            dest = f.slice(fixedPartIdx)
-            if destExt?
-              bn = _.path.basename(dest)
-              dn = _.path.dirname(dest)
+    # collects target+env+mode related files decl
+    for name, opts of @targets
+      if _.minimatch(target, name)
+        if opts[mode]?
+          _.extend(files, opts[mode])
+    
+    # resolves globs
+    res = {}
+    for k, v of files
+      if k.indexOf("*") == -1
+        res[_.path.resolve(k)] = _.path.resolve(_.path.join(base, v))
+      else
+        fixedPartIdx = k.split("*")[0].lastIndexOf(_.path.sep)
+        globres = _.glob(k)
+        
+        destBase = v
+        destExt = null
+        if _.isArray(destBase)
+          destBase = v[0]
+          destExt = v[1]
+        
+        for f in globres
+          dest = f.slice(fixedPartIdx)
+          if destExt?
+            bn = _.path.basename(dest)
+            dn = _.path.dirname(dest)
 
-              noExt = bn.slice(0, bn.indexOf("."))
-              dest =  _.path.join dn, "#{noExt}.#{destExt}"
-            res[f] = _.path.join(base, destBase, dest)
-   
-      @_files["#{mode}:#{target}:#{env}"] = res
-    @_files["#{mode}:#{target}:#{env}"]
+            noExt = bn.slice(0, bn.indexOf("."))
+            dest =  _.path.join dn, "#{noExt}.#{destExt}"
+          res[_.path.resolve(f)] = _.path.resolve(_.path.join(base, destBase, dest))
+ 
+    res
 
   getContext: (target, env) ->
     context = {}
@@ -97,13 +93,7 @@ class Config
     bid = "#{target}:#{env}"
 
     if not @bundles[bid]?
-      @bundles[bid] = new Bundle
-        copy: @getFiles("copy", target, env)
-        build: @getFiles("build", target, env)
-        env: @getContext(target, env)
-        dest: @getDestination(target, env)
-        builderConfig: @builderConfig
-
+      @bundles[bid] = new Bundle(@, target, env)
     @bundles[bid]
 
 

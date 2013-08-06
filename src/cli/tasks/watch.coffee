@@ -7,8 +7,8 @@ module.exports = (runner) ->
     targets = @h.parseTargets(config, targets)
     envs    = @h.parseEnvs(config, envs)
 
-    console.log _.clc.green("Watching for changes ..")
-    @h.watch "./*", (filename) ->
+    console.log @h.clc.green("Watching for changes ..")
+    @h.watch ".", (filename) ->
       for target in targets
         for env in envs
           bundle = config.getBundle(target, env)

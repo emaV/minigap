@@ -39,54 +39,48 @@ Config = (function() {
 
   Config.prototype.getFiles = function(mode, target, env) {
     var base, bn, dest, destBase, destExt, dn, f, files, fixedPartIdx, globres, k, name, noExt, opts, res, v, _i, _len, _ref;
-    if (this._files == null) {
-      this._files = {};
-    }
     base = this.getDestination(target, env);
     if (base == null) {
       throw "Destination root not defined for " + target + ":" + env;
     }
-    if (!this._files["" + mode + ":" + target + ":" + env]) {
-      files = {};
-      _ref = this.targets;
-      for (name in _ref) {
-        opts = _ref[name];
-        if (_.minimatch(target, name)) {
-          if (opts[mode] != null) {
-            _.extend(files, opts[mode]);
-          }
+    files = {};
+    _ref = this.targets;
+    for (name in _ref) {
+      opts = _ref[name];
+      if (_.minimatch(target, name)) {
+        if (opts[mode] != null) {
+          _.extend(files, opts[mode]);
         }
       }
-      res = {};
-      for (k in files) {
-        v = files[k];
-        if (k.indexOf("*") === -1) {
-          res[k] = _.path.join(base, v);
-        } else {
-          fixedPartIdx = k.split("*")[0].lastIndexOf(_.path.sep);
-          globres = _.glob(k);
-          destBase = v;
-          destExt = null;
-          if (_.isArray(destBase)) {
-            destBase = v[0];
-            destExt = v[1];
-          }
-          for (_i = 0, _len = globres.length; _i < _len; _i++) {
-            f = globres[_i];
-            dest = f.slice(fixedPartIdx);
-            if (destExt != null) {
-              bn = _.path.basename(dest);
-              dn = _.path.dirname(dest);
-              noExt = bn.slice(0, bn.indexOf("."));
-              dest = _.path.join(dn, "" + noExt + "." + destExt);
-            }
-            res[f] = _.path.join(base, destBase, dest);
-          }
-        }
-      }
-      this._files["" + mode + ":" + target + ":" + env] = res;
     }
-    return this._files["" + mode + ":" + target + ":" + env];
+    res = {};
+    for (k in files) {
+      v = files[k];
+      if (k.indexOf("*") === -1) {
+        res[_.path.resolve(k)] = _.path.resolve(_.path.join(base, v));
+      } else {
+        fixedPartIdx = k.split("*")[0].lastIndexOf(_.path.sep);
+        globres = _.glob(k);
+        destBase = v;
+        destExt = null;
+        if (_.isArray(destBase)) {
+          destBase = v[0];
+          destExt = v[1];
+        }
+        for (_i = 0, _len = globres.length; _i < _len; _i++) {
+          f = globres[_i];
+          dest = f.slice(fixedPartIdx);
+          if (destExt != null) {
+            bn = _.path.basename(dest);
+            dn = _.path.dirname(dest);
+            noExt = bn.slice(0, bn.indexOf("."));
+            dest = _.path.join(dn, "" + noExt + "." + destExt);
+          }
+          res[_.path.resolve(f)] = _.path.resolve(_.path.join(base, destBase, dest));
+        }
+      }
+    }
+    return res;
   };
 
   Config.prototype.getContext = function(target, env) {
@@ -128,13 +122,7 @@ Config = (function() {
     var bid;
     bid = "" + target + ":" + env;
     if (this.bundles[bid] == null) {
-      this.bundles[bid] = new Bundle({
-        copy: this.getFiles("copy", target, env),
-        build: this.getFiles("build", target, env),
-        env: this.getContext(target, env),
-        dest: this.getDestination(target, env),
-        builderConfig: this.builderConfig
-      });
+      this.bundles[bid] = new Bundle(this, target, env);
     }
     return this.bundles[bid];
   };

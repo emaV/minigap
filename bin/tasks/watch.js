@@ -9,8 +9,8 @@ module.exports = function(runner) {
     config = this.h.readBuildConfig();
     targets = this.h.parseTargets(config, targets);
     envs = this.h.parseEnvs(config, envs);
-    console.log(_.clc.green("Watching for changes .."));
-    return this.h.watch("./*", function(filename) {
+    console.log(this.h.clc.green("Watching for changes .."));
+    return this.h.watch(".", function(filename) {
       var bundle, env, target, _i, _len, _results;
       _results = [];
       for (_i = 0, _len = targets.length; _i < _len; _i++) {
