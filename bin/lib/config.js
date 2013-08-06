@@ -103,7 +103,8 @@ Config = (function() {
       }
     }
     context.target = target;
-    return context.env = env;
+    context.env = env;
+    return context;
   };
 
   Config.prototype.availableTargets = function() {

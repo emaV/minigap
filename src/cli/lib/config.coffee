@@ -80,6 +80,7 @@ class Config
 
     context.target = target
     context.env = env
+    context
 
   availableTargets: () ->
     _.reject _.keys(@targets), (t) ->

@@ -67,7 +67,11 @@ _.deleteFolderRecursive = function(path) {
 };
 
 _.copyFileSync = function(srcFile, destFile) {
-  var BUF_LENGTH, buff, bytesRead, destDir, fdr, fdw, pos;
+  var BUF_LENGTH, buff, bytesRead, destDir, fdr, fdw, pos, stats;
+  stats = fs.statSync(srcFile);
+  if (!stats.isFile()) {
+    return false;
+  }
   BUF_LENGTH = 64 * 1024;
   buff = new Buffer(BUF_LENGTH);
   fdr = fs.openSync(srcFile, 'r');

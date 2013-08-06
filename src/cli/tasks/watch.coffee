@@ -8,8 +8,28 @@ module.exports = (runner) ->
     envs    = @h.parseEnvs(config, envs)
 
     console.log @h.clc.green("Watching for changes ..")
-    @h.watch ".", (filename) ->
-      for target in targets
-        for env in envs
-          bundle = config.getBundle(target, env)
-          bundle.changed(filename)
+    t = null
+    rebuildLapse = 2000 # Awaits 2 seconds between file change and rebuild
+
+    @h.watch ["app", "lib"], (filename) ->     
+      console.log runner.h.clc.yellow("Changed: #{filename}")
+      if t
+        clearTimeout(t)
+
+      t = setTimeout (->
+        try
+          for target in targets
+            for env in envs
+              console.log "Building #{target}:#{env}"
+              bundle = config.getBundle(target, env)              
+              bundle.build()
+
+        catch e
+          runner.h.error(e)
+
+        runner.h.success("Done.")
+              
+
+      ), rebuildLapse
+
+
