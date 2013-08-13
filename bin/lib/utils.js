@@ -42,10 +42,10 @@ _.runCmd = function(cmd, args, opts, cb) {
   }
   child = spawn(cmd, args || [], opts);
   child.stdout.on("data", function(data) {
-    return console.log(data);
+    return console.log(data.toString());
   });
   child.stderr.on("data", function(data) {
-    return console.error(data);
+    return console.error(data.toString());
   });
   if (cb != null) {
     return child.on('close', cb);

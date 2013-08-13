@@ -25,10 +25,10 @@ _.runCmd = (cmd, args, opts = {}, cb) ->
   child = spawn(cmd, args or [], opts)
 
   child.stdout.on "data", (data) ->
-    console.log data
+    console.log data.toString()
 
   child.stderr.on "data", (data) ->
-    console.error data
+    console.error data.toString()
 
   if cb?
     child.on 'close', cb
