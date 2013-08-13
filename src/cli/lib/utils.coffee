@@ -3,6 +3,7 @@ clc    = require('cli-color')
 fs     = require('fs')
 path   = require("path")
 nopt    = require("nopt")
+spawn = require("child_process").spawn
 
 _.mkdirp = require('mkdirp').sync
 _.clc = clc
@@ -12,6 +13,25 @@ _.fs        = fs
 _.path      = path
 _.watch     = require('node-watch')
 _.touch     = require('touch')
+
+_.runCmd = (cmd, args, opts = {}, cb) ->
+
+  if opts.cwd
+    if not fs.existsSync(opts.cwd)
+      throw "The specified working directory '#{opts.cwd}' does not exist."
+    else if not fs.statSync(opts.cwd).isDirectory()
+      throw "The specified working path '#{opts.cwd}' is not a directory."
+
+  child = spawn(cmd, args or [], opts)
+
+  child.stdout.on "data", (data) ->
+    console.log data
+
+  child.stderr.on "data", (data) ->
+    console.error data
+
+  if cb?
+    child.on 'close', cb
 
 _.parseArgv = -> 
   nopt({}, {}, process.argv, 2)

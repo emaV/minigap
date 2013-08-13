@@ -18,8 +18,26 @@ class Bundle
     @filesToBeBuilt  = options.build
     @context         = options.env
     @dest            = options.dest    
-    @builder         = new preproc.Builder(libs: [_.path.resolve("./lib")])
-    @builder.config(options.builderConfig)
+    @builder         = new preproc.Builder #(libs: [_.path.resolve("./lib")])
+    hbsOptions =
+      types:
+        handlebars:
+          delimiters: ["<!--=", "-->"]
+          extensions: ['.hbs']
+          to:
+            coffeescript: (content, filename) ->
+              handlebars = require("handlebars")
+              path = require("path")
+              templateName = path.basename(filename, ".hbs")
+              template = handlebars.precompile(content)
+              res = if templateName.slice(0,1) is "_"
+                templateName = templateName.replace(/^_/, "")
+                'Handlebars.partials[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n'
+              else
+                'Minigap.templates[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n'
+              res
+
+    @builder.config(_.extend({}, hbsOptions, options.builderConfig or {}))
     @builder.env     = @context
 
 

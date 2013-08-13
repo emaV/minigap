@@ -37,8 +37,13 @@ module.exports = function(runner) {
     }
   });
   return runner.helper("readBuildConfig", function() {
-    var readBuildConfig;
-    readBuildConfig = require("../lib/config");
-    return readBuildConfig();
+    var e, readBuildConfig;
+    try {
+      readBuildConfig = require("../lib/config");
+      return readBuildConfig();
+    } catch (_error) {
+      e = _error;
+      return this.h.fatal("An error occurred trying to read your configuration:\n\t" + e + ".");
+    }
   });
 };

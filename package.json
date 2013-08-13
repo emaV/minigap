@@ -22,6 +22,7 @@
     "minigap": "bin/minigap.js"
   },
   "dependencies": {
+    "preproc": "~0.1.10",
     "nopt": "~2.1.1",
     "ncp": "~0.4.2",
     "cli-color": "0.2.2",
@@ -29,12 +30,12 @@
     "mkdirp": "~0.3.5",
     "touch": "~0.0.2",
     "yeoman-generator": "~0.12.3",
-    "preproc": "~0.1.8",
     "node-watch": "~0.3.4",
     "underscore": "~1.5.1",
     "coffee-script": "~1.6.3",
     "minimatch": "~0.2.12",
-    "glob": "~3.2.6"
+    "glob": "~3.2.6",
+    "handlebars": "~1.0.12"
   },
   "devDependencies": {
     "grunt": "~0.4.1",

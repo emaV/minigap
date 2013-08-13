@@ -48,5 +48,8 @@ module.exports = (runner) ->
       true
 
   runner.helper "readBuildConfig", ->
-    readBuildConfig = require("../lib/config")
-    readBuildConfig()
+    try
+      readBuildConfig = require("../lib/config")  
+      readBuildConfig()
+    catch e
+      @h.fatal("An error occurred trying to read your configuration:\n\t#{e}.")

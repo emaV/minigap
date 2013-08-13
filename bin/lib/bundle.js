@@ -12,7 +12,7 @@ Bundle = (function() {
   }
 
   Bundle.prototype._reset = function() {
-    var options;
+    var hbsOptions, options;
     options = {
       copy: this.config.getFiles("copy", this.target, this.env),
       build: this.config.getFiles("build", this.target, this.env),
@@ -24,10 +24,27 @@ Bundle = (function() {
     this.filesToBeBuilt = options.build;
     this.context = options.env;
     this.dest = options.dest;
-    this.builder = new preproc.Builder({
-      libs: [_.path.resolve("./lib")]
-    });
-    this.builder.config(options.builderConfig);
+    this.builder = new preproc.Builder;
+    hbsOptions = {
+      types: {
+        handlebars: {
+          delimiters: ["<!--=", "-->"],
+          extensions: ['.hbs'],
+          to: {
+            coffeescript: function(content, filename) {
+              var handlebars, path, res, template, templateName;
+              handlebars = require("handlebars");
+              path = require("path");
+              templateName = path.basename(filename, ".hbs");
+              template = handlebars.precompile(content);
+              res = templateName.slice(0, 1) === "_" ? (templateName = templateName.replace(/^_/, ""), 'Handlebars.partials[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n') : 'Minigap.templates[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n';
+              return res;
+            }
+          }
+        }
+      }
+    };
+    this.builder.config(_.extend({}, hbsOptions, options.builderConfig || {}));
     return this.builder.env = this.context;
   };
 

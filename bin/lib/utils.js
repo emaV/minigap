@@ -1,4 +1,4 @@
-var clc, fs, nopt, path, _;
+var clc, fs, nopt, path, spawn, _;
 
 _ = require("underscore");
 
@@ -9,6 +9,8 @@ fs = require('fs');
 path = require("path");
 
 nopt = require("nopt");
+
+spawn = require("child_process").spawn;
 
 _.mkdirp = require('mkdirp').sync;
 
@@ -25,6 +27,30 @@ _.path = path;
 _.watch = require('node-watch');
 
 _.touch = require('touch');
+
+_.runCmd = function(cmd, args, opts, cb) {
+  var child;
+  if (opts == null) {
+    opts = {};
+  }
+  if (opts.cwd) {
+    if (!fs.existsSync(opts.cwd)) {
+      throw "The specified working directory '" + opts.cwd + "' does not exist.";
+    } else if (!fs.statSync(opts.cwd).isDirectory()) {
+      throw "The specified working path '" + opts.cwd + "' is not a directory.";
+    }
+  }
+  child = spawn(cmd, args || [], opts);
+  child.stdout.on("data", function(data) {
+    return console.log(data);
+  });
+  child.stderr.on("data", function(data) {
+    return console.error(data);
+  });
+  if (cb != null) {
+    return child.on('close', cb);
+  }
+};
 
 _.parseArgv = function() {
   return nopt({}, {}, process.argv, 2);

@@ -13,6 +13,7 @@ Config = (function() {
     this.envs = {};
     this.deps = {};
     this.builderConfig = {};
+    this.runnables = {};
   }
 
   Config.prototype.env = function(name, opts) {
@@ -35,6 +36,10 @@ Config = (function() {
 
   Config.prototype.getDestination = function(target, env) {
     return this.targets[target].dest[env];
+  };
+
+  Config.prototype.runnable = function(name, obj) {
+    return this.runnables[name] = obj;
   };
 
   Config.prototype.getFiles = function(mode, target, env) {

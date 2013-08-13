@@ -9,6 +9,7 @@ class Config
     @envs = {}
     @deps = {}
     @builderConfig = {}
+    @runnables = {}
 
   env:     (name, opts) ->
     @envs[name] ||= {}
@@ -25,6 +26,9 @@ class Config
 
   getDestination: (target, env) ->
     @targets[target].dest[env]
+
+  runnable: (name, obj) ->
+    @runnables[name] = obj
 
   getFiles: (mode, target, env) ->
     base = @getDestination(target, env)
