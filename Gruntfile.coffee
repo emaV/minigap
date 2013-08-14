@@ -17,14 +17,6 @@ module.exports = (grunt) ->
 
     exec: exec_conf
 
-    dist:
-      src_path: './src'
-      dst_path: 'dist/'
-      src: [ 'minigap.coffee' ]
-      compile:
-        options:
-          bare: true
-
     cli:
       coffee:
         compile:
@@ -35,29 +27,6 @@ module.exports = (grunt) ->
           ext: '.js'
           options:
             bare: true
-
-    # src_path: './src/cli'
-    # dst_path: 'bin'
-    # src: [ '**/*.coffee' ]
-    # compile:
-    #   options:
-    #     bare: true
-  
-    # cliLibs:
-    #   src_path: './src/cli/lib'
-    #   dst_path: 'bin/lib'
-    #   src: [ '*.coffee' ]
-    #   compile:
-    #     options:
-    #       bare: true
-
-    # cliTasks:
-    #   src_path: './src/cli/tasks'
-    #   dst_path: 'bin/tasks'
-    #   src: [ '*.coffee' ]
-    #   compile:
-    #     options:
-    #       bare: true
 
     generator:
       copy:
@@ -140,15 +109,16 @@ module.exports = (grunt) ->
       files: ["src/**/*.coffee"]
       tasks: ["build"]
   
+    clean: ["bin"]
 
   grunt.loadNpmTasks "grunt-contrib-coffee"
   grunt.loadNpmTasks "grunt-contrib-watch"
   grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-regex-replace'
   grunt.loadNpmTasks "grunt-exec"
+  grunt.loadNpmTasks "grunt-contrib-clean"
 
-
-  grunt.registerTask "build", ["dist", "cli", "generator"]
+  grunt.registerTask "build", ["clean", "dist", "cli", "generator"]
   grunt.registerTask "default", ["build"]
 
   grunt.registerTask 'dist', 'dist', ->

@@ -1,31 +1,23 @@
-#= require core/namespace
+@Minigap ?= {}
 
-class @Minigap.Origin
+class Minigap.Origin
 
   constructor: (@domain = "", @base = "/") ->
     @_urlbase = @_url_join(@domain, @base)
 
     # This is set by the application receiving this object
-    @app = null
 
-
-  # This method is called by application to set itself as @app
-  # ovveride this to create adapters to other Origins
-
-  setApp: (@app) ->
-
-
-  request: (path, params, options, func) ->
+  request: (context, path, params, options, func) ->
     args = @_normalizeRequestArguments(path, params, options, func)
     self = @
     @doRequest args.url, args.params, args.options, (response) ->
       if typeof args.func is 'function'
-        args.func.call(self.app, self.processResponse(response))
+        args.func.call(context, self.processResponse(response))
   
 
-  # Performs multiple requests and run the callback on merged response:
+  # Performs multiple requests and runs callback on merged response:
 
-  requests: (requests, func) ->
+  requests: (context, requests, func) ->
 
     responses = []
     self = @
@@ -40,7 +32,7 @@ class @Minigap.Origin
         func.call self.app, self.doMerge( responses )
 
     for req in requests
-      @request req.path, req.params, req.options, (resp) ->
+      @request context, req.path, req.params, req.options, (resp) ->
         requestDone(req, resp)
   
 

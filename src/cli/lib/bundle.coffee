@@ -18,8 +18,9 @@ class Bundle
     @filesToBeBuilt  = options.build
     @context         = options.env
     @dest            = options.dest    
-    @builder         = new preproc.Builder #(libs: [_.path.resolve("./lib")])
+    @builder         = new preproc.Builder
     hbsOptions =
+      libs: [_.path.resolve(__dirname, "../../src/runtime")]
       types:
         handlebars:
           delimiters: ["<!--=", "-->"]
