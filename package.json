@@ -22,7 +22,7 @@
     "minigap": "bin/minigap.js"
   },
   "dependencies": {
-    "preproc": "~0.1.13",
+    "preproc": "~0.1.14",
     "nopt": "~2.1.1",
     "ncp": "~0.4.2",
     "cli-color": "0.2.2",

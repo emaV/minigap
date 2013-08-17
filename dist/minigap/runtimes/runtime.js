@@ -130,7 +130,14 @@ Minigap.ActionContext = (function() {
   };
 
   ActionContext.prototype._renderTemplate = function(template, context) {
-    return Minigap.templates[template].call(null, context);
+    var t;
+    console.log(require("util").inspect(Minigap.templates));
+    t = Minigap.templates[template];
+    if (t == null) {
+      throw "Template '" + template + "' not found.";
+    } else {
+      return t.call(null, context);
+    }
   };
 
   return ActionContext;

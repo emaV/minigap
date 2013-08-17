@@ -155,11 +155,12 @@ readBuildConfig = function(path) {
         delimiters: ["<!--=", "-->"],
         extensions: ['.hbs'],
         to: {
-          coffeescript: function(content, filename) {
+          coffeescript: function(content, srcPath) {
             var handlebars, res, template, templateName;
+            console.log("*******************************************", srcPath);
             handlebars = require("handlebars");
             path = require("path");
-            templateName = path.basename(filename, ".hbs");
+            templateName = path.basename(srcPath, ".hbs");
             template = handlebars.precompile(content);
             res = templateName.slice(0, 1) === "_" ? (templateName = templateName.replace(/^_/, ""), 'Handlebars.partials[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n') : 'Minigap.templates[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n';
             return res;

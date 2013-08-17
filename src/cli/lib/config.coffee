@@ -119,10 +119,11 @@ readBuildConfig = (path)->
         delimiters: ["<!--=", "-->"]
         extensions: ['.hbs']
         to:
-          coffeescript: (content, filename) ->
+          coffeescript: (content, srcPath) ->
+            console.log "*******************************************", srcPath
             handlebars = require("handlebars")
             path = require("path")
-            templateName = path.basename(filename, ".hbs")
+            templateName = path.basename(srcPath, ".hbs")
             template = handlebars.precompile(content)
             res = if templateName.slice(0,1) is "_"
               templateName = templateName.replace(/^_/, "")
