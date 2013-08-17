@@ -8,11 +8,21 @@ module.exports = (runner) ->
 
     config  = @h.readBuildConfig()
     cmd = config.runnables[runnable]
+
+    exitOnChildError = ->
+      _.fatal("Exiting due to errors in child process.")
+
+    spawn = (cmd, args, opts) ->
+
+      child = _.spawn(cmd, args, opts)
+      child.on "exit", (c) ->
+        if c != 0
+          exitOnChildError()
+
+      child.on "error", (e) ->
+        exitOnChildError()
+
     if !cmd?
       _.fatal "There is no runnable named '#{runnable}' in your configuration."
     
-    _.runCmd cmd.command, cmd.args, {cwd: cmd.cwd}, (code) ->
-      if code == 0
-        runner.h.success "Done."
-      else
-        runner.h.error "'#{cmd.command}' exited with error code #{code}."
+    cmd(_.spawn)

@@ -1,4 +1,6 @@
-#= require "../lib/moment.js"
+`
+//= require "../lib/moment.js"
+`
 
 moment = @.moment
 

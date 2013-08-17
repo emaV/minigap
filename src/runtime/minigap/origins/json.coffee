@@ -1,4 +1,6 @@
-#= require "./origin.coffee"
+`
+//= require "./origin.js"
+`
 
 class Minigap.JsonOrigin extends Minigap.Origin
 

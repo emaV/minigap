@@ -1,4 +1,4 @@
-var clc, fs, nopt, path, spawn, _;
+var clc, cp, fs, nopt, path, spawn, _;
 
 _ = require("underscore");
 
@@ -10,7 +10,9 @@ path = require("path");
 
 nopt = require("nopt");
 
-spawn = require("child_process").spawn;
+cp = require("child_process");
+
+spawn = cp.spawn;
 
 _.mkdirp = require('mkdirp').sync;
 
@@ -28,28 +30,72 @@ _.watch = require('node-watch');
 
 _.touch = require('touch');
 
-_.runCmd = function(cmd, args, opts, cb) {
-  var child;
-  if (opts == null) {
-    opts = {};
+_.fork = function(module, args, opts) {
+  var child, childName, idx;
+  childName = path.basename(module);
+  idx = childName.indexOf(".");
+  if (idx !== -1) {
+    childName = childName.slice(0, idx);
   }
-  if (opts.cwd) {
-    if (!fs.existsSync(opts.cwd)) {
-      throw "The specified working directory '" + opts.cwd + "' does not exist.";
-    } else if (!fs.statSync(opts.cwd).isDirectory()) {
-      throw "The specified working path '" + opts.cwd + "' is not a directory.";
-    }
+  console.log("[" + childName + "] Forking ..");
+  child = cp.fork(module, args, opts);
+  child.on("exit", function(c) {
+    return console.log("[" + childName + "] Exiting with code " + c);
+  });
+  child.on("error", function(e) {
+    return console.error("[" + childName + "] Error: " + e);
+  });
+  process.on("exit", function() {
+    console.log("[" + childName + "] Killing ..");
+    return child.kill();
+  });
+  return child;
+};
+
+_.mark = function(t) {
+  var r;
+  r = {};
+  if (t != null) {
+    r.hr = process.hrtime(t.hr);
+  } else {
+    r.hr = process.hrtime();
   }
-  child = spawn(cmd, args || [], opts);
+  r.toString = function() {
+    var n, ns, s;
+    s = r.hr[0];
+    n = r.hr[1];
+    ns = ("00000000" + n).slice(-9).slice(0, 3);
+    return "" + s + "." + ns + " s";
+  };
+  return r;
+};
+
+_.isSubpath = function(p1, p2) {
+  p1 = path.resolve(p1);
+  p2 = path.resolve(p2);
+  return p2.slice(0, p1.length) === p1;
+};
+
+_.spawn = function(cmd, args, opts) {
+  var child, childName, color, err, formatData, pre;
+  childName = (opts && opts.as) || path.basename(cmd);
+  pre = "[" + childName + "]";
+  if (opts && opts.color) {
+    color = clc[opts.color] || clc["white"];
+    pre = color.bold(pre);
+    err = color.bold(pre + "*");
+  }
+  formatData = function(pre, msg) {
+    return ("" + pre + " " + msg).replace(/\n+$/, "").replace(/\n+/g, "\n" + pre + " ");
+  };
+  child = spawn(cmd, args, opts);
   child.stdout.on("data", function(data) {
-    return console.log(data.toString());
+    return console.log(formatData(pre, data.toString()));
   });
   child.stderr.on("data", function(data) {
-    return console.error(data.toString());
+    return console.error(formatData(err, data.toString()));
   });
-  if (cb != null) {
-    return child.on('close', cb);
-  }
+  return child;
 };
 
 _.parseArgv = function() {

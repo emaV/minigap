@@ -11,6 +11,12 @@ module.exports = (runner) ->
       for env in envs
         console.log @h.clc.yellow("Building #{target}:#{env}")
         bundle = config.getBundle(target, env)
-        bundle.build()
+        try
+          bundle.build()    
+        catch e
+          runner.h.error(e)
+          if e.type is "PreprocessorError"
+            runner.h.error("  @#{e.path}, L=#{e.line} C=#{e.column}")
+          process.exit()        
 
     @h.success "Done."

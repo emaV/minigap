@@ -1,4 +1,6 @@
-@Minigap ?= {}
+`
+//= require "../ns.js"
+`
 
 class Minigap.Runtime
   constructor: ->

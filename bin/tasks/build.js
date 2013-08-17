@@ -2,7 +2,7 @@ var __slice = [].slice;
 
 module.exports = function(runner) {
   return runner.task("build", "Build application", {}, {}, function() {
-    var bundle, config, env, envs, target, targets, _i, _j, _len, _len1;
+    var bundle, config, e, env, envs, target, targets, _i, _j, _len, _len1;
     targets = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
     this.h.check();
     envs = this.options.env ? options.env.split(",") : [];
@@ -15,7 +15,16 @@ module.exports = function(runner) {
         env = envs[_j];
         console.log(this.h.clc.yellow("Building " + target + ":" + env));
         bundle = config.getBundle(target, env);
-        bundle.build();
+        try {
+          bundle.build();
+        } catch (_error) {
+          e = _error;
+          runner.h.error(e);
+          if (e.type === "PreprocessorError") {
+            runner.h.error("  @" + e.path + ", L=" + e.line + " C=" + e.column);
+          }
+          process.exit();
+        }
       }
     }
     return this.h.success("Done.");

@@ -30,18 +30,21 @@ class Config
   runnable: (name, obj) ->
     @runnables[name] = obj
 
-  getFiles: (mode, target, env) ->
+  getFiles: (mode, target, env) ->    
     base = @getDestination(target, env)
     if !base?
       throw "Destination root not defined for #{target}:#{env}"
 
     files = {}
 
-    # collects target+env+mode related files decl
-    for name, opts of @targets
-      if _.minimatch(target, name)
-        if opts[mode]?
-          _.extend(files, opts[mode])
+    if mode == "copy"
+      files["src/bases/#{target}/**/*"] = ""
+    else
+      # collects target+env+mode related files decl
+      for name, opts of @targets
+        if _.minimatch(target, name)
+          if opts[mode]?
+            _.extend(files, opts[mode])
     
     # resolves globs
     res = {}
@@ -107,6 +110,29 @@ readBuildConfig = (path)->
   readConf  = require(_.path.resolve(path or "./config"))
   configDsl = new Config()
   readConf(configDsl)
-  configDsl
+  conf = configDsl
+  srcPath = _.path.resolve(__dirname, "../../dist")
+  hbsOptions =
+    libs: [srcPath]
+    types:
+      handlebars:
+        delimiters: ["<!--=", "-->"]
+        extensions: ['.hbs']
+        to:
+          coffeescript: (content, filename) ->
+            handlebars = require("handlebars")
+            path = require("path")
+            templateName = path.basename(filename, ".hbs")
+            template = handlebars.precompile(content)
+            res = if templateName.slice(0,1) is "_"
+              templateName = templateName.replace(/^_/, "")
+              'Handlebars.partials[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n'
+            else
+              'Minigap.templates[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n'
+            res
+
+  conf.builderConfig = _.extend(hbsOptions, conf.builderConfig)
+  conf
+
 
 module.exports = readBuildConfig

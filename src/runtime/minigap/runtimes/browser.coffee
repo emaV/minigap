@@ -1,8 +1,9 @@
-#= require "../lib/handlebars.runtime.js" --skip
-#= require "../lib/jquery2.js" --skip
-#= require "../lib/davis.js" --skip
-
-#= require "./runtime.coffee"
+`
+//= require "../lib/handlebars.runtime.js" --skip
+//= require "../lib/jquery2.js" --skip
+//= require "../lib/davis.js" --skip
+//= require "./runtime.js"
+`
 
 class BrowserActionContext extends Minigap.ActionContext
   constructor: (@impl = {})->
@@ -96,4 +97,4 @@ class Minigap.BrowserRuntime extends Minigap.Runtime
     res
 
    
-Minigap = new Minigap.BrowserRuntime()
+Minigap.setRuntime(new Minigap.BrowserRuntime())

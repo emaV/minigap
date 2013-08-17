@@ -49,12 +49,16 @@ Config = (function() {
       throw "Destination root not defined for " + target + ":" + env;
     }
     files = {};
-    _ref = this.targets;
-    for (name in _ref) {
-      opts = _ref[name];
-      if (_.minimatch(target, name)) {
-        if (opts[mode] != null) {
-          _.extend(files, opts[mode]);
+    if (mode === "copy") {
+      files["src/bases/" + target + "/**/*"] = "";
+    } else {
+      _ref = this.targets;
+      for (name in _ref) {
+        opts = _ref[name];
+        if (_.minimatch(target, name)) {
+          if (opts[mode] != null) {
+            _.extend(files, opts[mode]);
+          }
         }
       }
     }
@@ -138,11 +142,34 @@ Config = (function() {
 })();
 
 readBuildConfig = function(path) {
-  var configDsl, readConf;
+  var conf, configDsl, hbsOptions, readConf, srcPath;
   readConf = require(_.path.resolve(path || "./config"));
   configDsl = new Config();
   readConf(configDsl);
-  return configDsl;
+  conf = configDsl;
+  srcPath = _.path.resolve(__dirname, "../../dist");
+  hbsOptions = {
+    libs: [srcPath],
+    types: {
+      handlebars: {
+        delimiters: ["<!--=", "-->"],
+        extensions: ['.hbs'],
+        to: {
+          coffeescript: function(content, filename) {
+            var handlebars, res, template, templateName;
+            handlebars = require("handlebars");
+            path = require("path");
+            templateName = path.basename(filename, ".hbs");
+            template = handlebars.precompile(content);
+            res = templateName.slice(0, 1) === "_" ? (templateName = templateName.replace(/^_/, ""), 'Handlebars.partials[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n') : 'Minigap.templates[\'' + templateName + '\'] = Handlebars.template(`' + template + '`)\n';
+            return res;
+          }
+        }
+      }
+    }
+  };
+  conf.builderConfig = _.extend(hbsOptions, conf.builderConfig);
+  return conf;
 };
 
 module.exports = readBuildConfig;

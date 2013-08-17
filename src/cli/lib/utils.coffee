@@ -3,7 +3,8 @@ clc    = require('cli-color')
 fs     = require('fs')
 path   = require("path")
 nopt    = require("nopt")
-spawn = require("child_process").spawn
+cp    = require("child_process")
+spawn = cp.spawn
 
 _.mkdirp = require('mkdirp').sync
 _.clc = clc
@@ -14,24 +15,69 @@ _.path      = path
 _.watch     = require('node-watch')
 _.touch     = require('touch')
 
-_.runCmd = (cmd, args, opts = {}, cb) ->
+_.fork = (module, args, opts) ->
+  
+  childName = path.basename(module)
+  idx = childName.indexOf(".")
+  if idx != -1
+    childName = childName.slice(0, idx)
+  
+  console.log "[#{childName}] Forking .."
+  child = cp.fork(module, args, opts)
+  
+  child.on "exit", (c)->  
+    console.log "[#{childName}] Exiting with code #{c}"
 
-  if opts.cwd
-    if not fs.existsSync(opts.cwd)
-      throw "The specified working directory '#{opts.cwd}' does not exist."
-    else if not fs.statSync(opts.cwd).isDirectory()
-      throw "The specified working path '#{opts.cwd}' is not a directory."
+  child.on "error", (e)->  
+    console.error "[#{childName}] Error: #{e}"
+ 
+  process.on "exit", ->
+    console.log "[#{childName}] Killing .."
+    child.kill()
 
-  child = spawn(cmd, args or [], opts)
+  child
+
+_.mark = (t) ->
+  r = {}
+  if t?
+    r.hr = process.hrtime(t.hr)
+  else
+    r.hr = process.hrtime()
+
+  r.toString = ->
+    s = r.hr[0]
+    n = r.hr[1]
+    ns = "00000000#{n}".slice(-9).slice(0, 3)
+    "#{s}.#{ns} s"
+  
+  r
+
+_.isSubpath = (p1, p2) ->
+  p1 = path.resolve(p1)
+  p2 = path.resolve(p2)
+  p2.slice(0, p1.length) == p1
+
+_.spawn = (cmd, args, opts) ->  
+
+  childName = (opts and opts.as) or path.basename(cmd)
+  pre = "[#{childName}]"
+  if opts and opts.color
+    color = clc[opts.color] or clc["white"]
+    pre   = color.bold(pre)
+    err = color.bold(pre + "*")
+
+  formatData = (pre, msg) ->
+    "#{pre} #{msg}".replace(/\n+$/, "").replace(/\n+/g, "\n#{pre} ")
+    
+  child = spawn(cmd, args, opts)
 
   child.stdout.on "data", (data) ->
-    console.log data.toString()
+    console.log formatData(pre, data.toString())
 
   child.stderr.on "data", (data) ->
-    console.error data.toString()
+    console.error formatData(err, data.toString())
 
-  if cb?
-    child.on 'close', cb
+  child
 
 _.parseArgv = -> 
   nopt({}, {}, process.argv, 2)
