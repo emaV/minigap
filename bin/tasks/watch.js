@@ -2,74 +2,67 @@ var __slice = [].slice;
 
 module.exports = function(runner) {
   return runner.task("watch", "Watch for changes on the source code and rebuild the changed sources only", {}, {}, function() {
-    var buildDir, bundle, config, develPath, env, envs, rebuildLapse, t, target, targets, toBeWatched, watchDevel, watchDir, ws, _i, _j, _len, _len1;
+    var config, develPath, env, envs, rebuildLapse, srcDir, srcDirToTarget, srcDirs, t, target, targets, targetsFor, toBeWatched, _i, _len;
     targets = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
     this.h.check();
-    envs = this.options.env ? options.env.split(",") : [];
+    envs = this.options.env ? [this.options.env] : [];
     config = this.h.readBuildConfig();
     targets = this.h.parseTargets(config, targets);
     envs = this.h.parseEnvs(config, envs);
-    if (this.options.build) {
-      console.log(this.h.clc.green("Building .."));
-      for (_i = 0, _len = targets.length; _i < _len; _i++) {
-        target = targets[_i];
-        for (_j = 0, _len1 = envs.length; _j < _len1; _j++) {
-          env = envs[_j];
-          console.log(this.h.clc.yellow("Building " + target + ":" + env));
-          bundle = config.getBundle(target, env);
-          bundle.build();
-        }
+    env = envs[0];
+    srcDirs = [];
+    srcDirToTarget = {};
+    for (_i = 0, _len = targets.length; _i < _len; _i++) {
+      target = targets[_i];
+      srcDir = config.getSrc(target, env);
+      if (!srcDir) {
+        this.h.fatal("Source root not specified for " + target + ":" + env);
+      } else {
+        srcDir = this.h.path.resolve(srcDir);
+        srcDirToTarget[srcDir] || (srcDirToTarget[srcDir] = []);
+        srcDirToTarget[srcDir].push(target);
+        srcDirs.push(srcDir);
       }
     }
-    console.log(this.h.clc.green("Watching for changes .."));
-    t = null;
-    rebuildLapse = 300;
-    watchDir = "src";
-    buildDir = this.h.path.resolve(watchDir, "app");
-    ws = this.h.fork(this.h.path.resolve(__dirname, "../lib/websocket.js"), [4000]);
-    watchDevel = this.options.dev;
-    toBeWatched = [watchDir];
-    develPath = this.h.path.resolve(__dirname, "../../dist/");
-    if (watchDevel) {
+    toBeWatched = this.h.uniq(srcDirs);
+    if (this.options.dev) {
+      develPath = this.h.path.resolve(__dirname, "../../dist/");
       toBeWatched.push(develPath);
     }
+    targetsFor = function(filename) {
+      var dir, res;
+      res = [];
+      for (dir in srcDirToTarget) {
+        targets = srcDirToTarget[dir];
+        if (runner.h.isSubpath(dir, runner.h.path.resolve(filename))) {
+          res = res.concat(targets);
+        }
+      }
+      return res;
+    };
+    console.log(this.h.clc.green("Watching for changes in " + (toBeWatched.join(', ')) + " .."));
+    t = null;
+    rebuildLapse = 300;
     return this.h.watch(toBeWatched, function(filename) {
       console.log(runner.h.clc.yellow("Changed: " + filename));
       if (t) {
         clearTimeout(t);
       }
       return t = setTimeout((function() {
-        var copyDir, e, t1, t2, _k, _l, _len2, _len3;
+        var bundle, e, t1, t2, _j, _len1;
         try {
-          for (_k = 0, _len2 = targets.length; _k < _len2; _k++) {
-            target = targets[_k];
-            copyDir = runner.h.path.resolve(watchDir, "bases", target);
-            for (_l = 0, _len3 = envs.length; _l < _len3; _l++) {
-              env = envs[_l];
-              bundle = config.getBundle(target, env);
-              if (runner.h.isSubpath(copyDir, filename)) {
-                t1 = runner.h.mark();
-                bundle.build({
-                  skipBuild: true
-                });
-                t2 = runner.h.mark(t1);
-                console.log("" + target + ":" + env + " base mirrored in " + t2);
-              } else if (runner.h.isSubpath(buildDir, filename) || (watchDevel && runner.h.isSubpath(develPath, filename))) {
-                t1 = runner.h.mark();
-                bundle.build({
-                  skipCopy: true
-                });
-                t2 = runner.h.mark(t1);
-                console.log("" + target + ":" + env + " rebuilt in " + t2);
-              }
-            }
+          targets = targetsFor(filename);
+          console.log("Targets that need to be rebuilt: ", targets.join(", "));
+          for (_j = 0, _len1 = targets.length; _j < _len1; _j++) {
+            target = targets[_j];
+            bundle = config.getBundle(target, env);
+            t1 = runner.h.mark();
+            bundle.build({
+              skipCopy: true
+            });
+            t2 = runner.h.mark(t1);
+            console.log("" + target + ":" + env + " rebuilt in " + t2);
           }
-          ws.send({
-            channel: "/builder/built",
-            message: {
-              builtAt: (new Date()).toString()
-            }
-          });
         } catch (_error) {
           e = _error;
           runner.h.error(e);

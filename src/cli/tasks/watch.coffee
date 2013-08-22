@@ -2,35 +2,40 @@ module.exports = (runner) ->
   runner.task "watch", "Watch for changes on the source code and rebuild the changed sources only", {}, {}, (targets...)->
     @h.check()
     
-    envs    = if @options.env then options.env.split(",") else []
+    envs    = if @options.env then [@options.env] else []
     config  = @h.readBuildConfig()
     targets = @h.parseTargets(config, targets)
     envs    = @h.parseEnvs(config, envs)
+    env     = envs[0]
 
-    if @options.build
-      console.log @h.clc.green("Building ..")
+    srcDirs = []
+    srcDirToTarget = {}
+    for target in targets
+      srcDir = config.getSrc(target, env)
+      if not srcDir
+        @h.fatal "Source root not specified for #{target}:#{env}"
+      else
+        srcDir = @h.path.resolve(srcDir)
+        srcDirToTarget[srcDir] ||= []
+        srcDirToTarget[srcDir].push(target)
+        srcDirs.push(srcDir)
 
-      for target in targets
-        for env in envs
-          console.log @h.clc.yellow("Building #{target}:#{env}")
-          bundle = config.getBundle(target, env)
-          bundle.build()
+    toBeWatched = @h.uniq(srcDirs)
 
-    console.log @h.clc.green("Watching for changes ..")
+    if @options.dev
+      develPath = @h.path.resolve(__dirname, "../../dist/")
+      toBeWatched.push(develPath)
+
+    targetsFor = (filename) ->
+      res = []
+      for dir, targets of srcDirToTarget
+        if runner.h.isSubpath(dir, runner.h.path.resolve(filename))
+          res = res.concat(targets)
+      res
+
+    console.log @h.clc.green("Watching for changes in #{toBeWatched.join(', ')} ..")
     t = null
     rebuildLapse = 300 # Waits 300 ms between file change and rebuild
- 
-    watchDir = "src"
-    buildDir = @h.path.resolve(watchDir, "app")
-
-    ws = @h.fork(@h.path.resolve(__dirname, "../lib/websocket.js"), [4000])
-
-    watchDevel = @options.dev
-    toBeWatched = [watchDir]
-    develPath = @h.path.resolve(__dirname, "../../dist/")
-    if watchDevel
-      toBeWatched.push(develPath)
-    
 
     @h.watch toBeWatched, (filename) ->
       console.log runner.h.clc.yellow("Changed: #{filename}")
@@ -39,27 +44,14 @@ module.exports = (runner) ->
 
       t = setTimeout (->
         try
+          targets = targetsFor(filename)
+          console.log "Targets that need to be rebuilt: ", targets.join(", ")
           for target in targets
-            copyDir = runner.h.path.resolve(watchDir, "bases", target)
-            for env in envs
-              bundle = config.getBundle(target, env)
-              
-              if runner.h.isSubpath(copyDir, filename)
-                t1 = runner.h.mark()
-                bundle.build(skipBuild: true)
-                t2 = runner.h.mark(t1)
-                console.log "#{target}:#{env} base mirrored in #{t2}"
-
-              else if runner.h.isSubpath(buildDir, filename) or (watchDevel and runner.h.isSubpath(develPath, filename))
-                t1 = runner.h.mark()
-                bundle.build(skipCopy: true)
-                t2 = runner.h.mark(t1)
-                console.log "#{target}:#{env} rebuilt in #{t2}"
-
-          ws.send 
-            channel: "/builder/built"
-            message:
-              builtAt: (new Date()).toString()
+            bundle = config.getBundle(target, env)
+            t1 = runner.h.mark()
+            bundle.build(skipCopy: true)
+            t2 = runner.h.mark(t1)
+            console.log "#{target}:#{env} rebuilt in #{t2}"
 
         catch e
           runner.h.error(e)

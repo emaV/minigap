@@ -131,7 +131,6 @@ Minigap.ActionContext = (function() {
 
   ActionContext.prototype._renderTemplate = function(template, context) {
     var t;
-    console.log(require("util").inspect(Minigap.templates));
     t = Minigap.templates[template];
     if (t == null) {
       throw "Template '" + template + "' not found.";

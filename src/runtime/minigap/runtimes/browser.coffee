@@ -2,6 +2,7 @@
 //= require "../lib/handlebars.runtime.js" --skip
 //= require "../lib/jquery2.js" --skip
 //= require "../lib/davis.js" --skip
+//= require "../lib/form-serializer.js" --skip
 //= require "./runtime.js"
 `
 
@@ -34,6 +35,16 @@ class Minigap.BrowserRuntime extends Minigap.Runtime
   start: () => 
     controllers = @controllers
     doc = $(document)
+    doc.on "submit", (e) ->
+      if not e._minigapHandled?
+        form = $(e.target)
+        evt = $.Event("submit")
+        evt._minigapHandled = true
+        evt.object = form.serializeObject()
+        form.trigger(evt)
+        e.stopPropagation()
+        false
+
     @app = Davis -> 
       davis = @
       for controller in controllers

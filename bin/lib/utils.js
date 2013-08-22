@@ -70,10 +70,10 @@ _.mark = function(t) {
   return r;
 };
 
-_.isSubpath = function(p1, p2) {
-  p1 = path.resolve(p1);
-  p2 = path.resolve(p2);
-  return p2.slice(0, p1.length) === p1;
+_.isSubpath = function(parent, contained) {
+  parent = path.resolve(parent);
+  contained = path.resolve(contained);
+  return contained.slice(0, parent.length) === parent;
 };
 
 _.spawn = function(cmd, args, opts) {

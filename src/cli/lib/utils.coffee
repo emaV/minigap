@@ -52,10 +52,10 @@ _.mark = (t) ->
   
   r
 
-_.isSubpath = (p1, p2) ->
-  p1 = path.resolve(p1)
-  p2 = path.resolve(p2)
-  p2.slice(0, p1.length) == p1
+_.isSubpath = (parent, contained) ->
+  parent = path.resolve(parent)
+  contained = path.resolve(contained)
+  contained.slice(0, parent.length) == parent
 
 _.spawn = (cmd, args, opts) ->  
 

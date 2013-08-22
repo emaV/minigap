@@ -24,33 +24,75 @@ class Config
   dep:    (name, opts) ->
     @deps[name] = opts
 
+  # First matching destination root
   getDestination: (target, env) ->
-    @targets[target].dest[env]
+    decls = @targets[target].dests or {}
+    for declEnv, path of decls
+      if _.minimatch(env, declEnv)
+        return path
+    null
+
+  # First matching source root
+  getSrc: (target, env) ->
+    decls = @targets[target].sources or {}
+    for declEnv, path of decls
+      if _.minimatch(env, declEnv)
+        return path
+    null
+
+  # All matching bases
+  getBases: (target, env) ->
+    decls = @targets[target].bases or {}
+    bases = []
+    for declEnv, path of decls
+      if _.minimatch(env, declEnv)
+        bases.push(_.path.resolve(path))
+
+    _.uniq(bases)
 
   runnable: (name, obj) ->
     @runnables[name] = obj
 
+  # All files (non-resolved) that needs to be built for a target-env pair
+  getFilesToBuild: (target, env) ->
+    decls = @targets[target].build or {}
+    src = @getSrc(target, env)
+    if !src
+      throw "Source path not defined for #{target}:#{env}"
+
+    res = {}
+    for declEnv, files of decls
+      if _.minimatch(env, declEnv)
+        for srcFile, dstFile of files
+          res[_.path.join(src, srcFile)] = dstFile
+
+
+    res
+
+
   getFiles: (mode, target, env) ->    
-    base = @getDestination(target, env)
-    if !base?
+    destinationRoot = @getDestination(target, env)
+    if !destinationRoot?
       throw "Destination root not defined for #{target}:#{env}"
 
     files = {}
 
     if mode == "copy"
-      files["src/bases/#{target}/**/*"] = ""
-    else
-      # collects target+env+mode related files decl
+      bases = @getBases(target,env)
+      for base in bases
+        files["#{base}/**/*"] = ""
+      
+    else if mode == "build"
+      
       for name, opts of @targets
-        if _.minimatch(target, name)
-          if opts[mode]?
-            _.extend(files, opts[mode])
+        _.extend(files, @getFilesToBuild(target, env))
+            
     
     # resolves globs
     res = {}
     for k, v of files
       if k.indexOf("*") == -1
-        res[_.path.resolve(k)] = _.path.resolve(_.path.join(base, v))
+        res[_.path.resolve(k)] = _.path.resolve(_.path.join(destinationRoot, v))
       else
         fixedPartIdx = k.split("*")[0].lastIndexOf(_.path.sep)
         globres = _.glob(k)
@@ -69,7 +111,7 @@ class Config
 
             noExt = bn.slice(0, bn.indexOf("."))
             dest =  _.path.join dn, "#{noExt}.#{destExt}"
-          res[_.path.resolve(f)] = _.path.resolve(_.path.join(base, destBase, dest))
+          res[_.path.resolve(f)] = _.path.resolve(_.path.join(destinationRoot, destBase, dest))
  
     res
 
@@ -107,7 +149,7 @@ class Config
 
 
 readBuildConfig = (path)->
-  readConf  = require(_.path.resolve(path or "./config"))
+  readConf  = require(_.path.resolve(path or "./src/config"))
   configDsl = new Config()
   readConf(configDsl)
   conf = configDsl
@@ -120,7 +162,6 @@ readBuildConfig = (path)->
         extensions: ['.hbs']
         to:
           coffeescript: (content, srcPath) ->
-            console.log "*******************************************", srcPath
             handlebars = require("handlebars")
             path = require("path")
             templateName = path.basename(srcPath, ".hbs")

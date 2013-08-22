@@ -96,12 +96,4 @@ class Minigap.ServerRuntime extends Minigap.Runtime
     app.listen port, ->
       console.log "Server listening on port: #{port}"
 
-# console.log "**********************"
-# console.log require("util").inspect(Minigap.Runtime.prototype)
-
-# global.Minigap = 
-
-# if not typeof Minigap.origin is "function"
-#   throw "Minigap.origin is not a function"
-
 Minigap.setRuntime(new Minigap.ServerRuntime())

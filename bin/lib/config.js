@@ -35,38 +35,91 @@ Config = (function() {
   };
 
   Config.prototype.getDestination = function(target, env) {
-    return this.targets[target].dest[env];
+    var declEnv, decls, path;
+    decls = this.targets[target].dests || {};
+    for (declEnv in decls) {
+      path = decls[declEnv];
+      if (_.minimatch(env, declEnv)) {
+        return path;
+      }
+    }
+    return null;
+  };
+
+  Config.prototype.getSrc = function(target, env) {
+    var declEnv, decls, path;
+    decls = this.targets[target].sources || {};
+    for (declEnv in decls) {
+      path = decls[declEnv];
+      if (_.minimatch(env, declEnv)) {
+        return path;
+      }
+    }
+    return null;
+  };
+
+  Config.prototype.getBases = function(target, env) {
+    var bases, declEnv, decls, path;
+    decls = this.targets[target].bases || {};
+    bases = [];
+    for (declEnv in decls) {
+      path = decls[declEnv];
+      if (_.minimatch(env, declEnv)) {
+        bases.push(_.path.resolve(path));
+      }
+    }
+    return _.uniq(bases);
   };
 
   Config.prototype.runnable = function(name, obj) {
     return this.runnables[name] = obj;
   };
 
+  Config.prototype.getFilesToBuild = function(target, env) {
+    var declEnv, decls, dstFile, files, res, src, srcFile;
+    decls = this.targets[target].build || {};
+    src = this.getSrc(target, env);
+    if (!src) {
+      throw "Source path not defined for " + target + ":" + env;
+    }
+    res = {};
+    for (declEnv in decls) {
+      files = decls[declEnv];
+      if (_.minimatch(env, declEnv)) {
+        for (srcFile in files) {
+          dstFile = files[srcFile];
+          res[_.path.join(src, srcFile)] = dstFile;
+        }
+      }
+    }
+    return res;
+  };
+
   Config.prototype.getFiles = function(mode, target, env) {
-    var base, bn, dest, destBase, destExt, dn, f, files, fixedPartIdx, globres, k, name, noExt, opts, res, v, _i, _len, _ref;
-    base = this.getDestination(target, env);
-    if (base == null) {
+    var base, bases, bn, dest, destBase, destExt, destinationRoot, dn, f, files, fixedPartIdx, globres, k, name, noExt, opts, res, v, _i, _j, _len, _len1, _ref;
+    destinationRoot = this.getDestination(target, env);
+    if (destinationRoot == null) {
       throw "Destination root not defined for " + target + ":" + env;
     }
     files = {};
     if (mode === "copy") {
-      files["src/bases/" + target + "/**/*"] = "";
-    } else {
+      bases = this.getBases(target, env);
+      for (_i = 0, _len = bases.length; _i < _len; _i++) {
+        base = bases[_i];
+        files["" + base + "/**/*"] = "";
+      }
+    } else if (mode === "build") {
       _ref = this.targets;
       for (name in _ref) {
         opts = _ref[name];
-        if (_.minimatch(target, name)) {
-          if (opts[mode] != null) {
-            _.extend(files, opts[mode]);
-          }
-        }
+        _.extend(files, this.getFilesToBuild(target, env));
       }
     }
     res = {};
     for (k in files) {
       v = files[k];
       if (k.indexOf("*") === -1) {
-        res[_.path.resolve(k)] = _.path.resolve(_.path.join(base, v));
+        res[_.path.resolve(k)] = _.path.resolve(_.path.join(destinationRoot, v));
       } else {
         fixedPartIdx = k.split("*")[0].lastIndexOf(_.path.sep);
         globres = _.glob(k);
@@ -76,8 +129,8 @@ Config = (function() {
           destBase = v[0];
           destExt = v[1];
         }
-        for (_i = 0, _len = globres.length; _i < _len; _i++) {
-          f = globres[_i];
+        for (_j = 0, _len1 = globres.length; _j < _len1; _j++) {
+          f = globres[_j];
           dest = f.slice(fixedPartIdx);
           if (destExt != null) {
             bn = _.path.basename(dest);
@@ -85,7 +138,7 @@ Config = (function() {
             noExt = bn.slice(0, bn.indexOf("."));
             dest = _.path.join(dn, "" + noExt + "." + destExt);
           }
-          res[_.path.resolve(f)] = _.path.resolve(_.path.join(base, destBase, dest));
+          res[_.path.resolve(f)] = _.path.resolve(_.path.join(destinationRoot, destBase, dest));
         }
       }
     }
@@ -143,7 +196,7 @@ Config = (function() {
 
 readBuildConfig = function(path) {
   var conf, configDsl, hbsOptions, readConf, srcPath;
-  readConf = require(_.path.resolve(path || "./config"));
+  readConf = require(_.path.resolve(path || "./src/config"));
   configDsl = new Config();
   readConf(configDsl);
   conf = configDsl;
@@ -157,7 +210,6 @@ readBuildConfig = function(path) {
         to: {
           coffeescript: function(content, srcPath) {
             var handlebars, res, template, templateName;
-            console.log("*******************************************", srcPath);
             handlebars = require("handlebars");
             path = require("path");
             templateName = path.basename(srcPath, ".hbs");

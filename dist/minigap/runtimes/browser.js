@@ -2,6 +2,7 @@
 //= require "../lib/handlebars.runtime.js" --skip
 //= require "../lib/jquery2.js" --skip
 //= require "../lib/davis.js" --skip
+//= require "../lib/form-serializer.js" --skip
 //= require "./runtime.js"
 ;
 var BrowserActionContext,
@@ -60,6 +61,18 @@ Minigap.BrowserRuntime = (function(_super) {
       _this = this;
     controllers = this.controllers;
     doc = $(document);
+    doc.on("submit", function(e) {
+      var evt, form;
+      if (e._minigapHandled == null) {
+        form = $(e.target);
+        evt = $.Event("submit");
+        evt._minigapHandled = true;
+        evt.object = form.serializeObject();
+        form.trigger(evt);
+        e.stopPropagation();
+        return false;
+      }
+    });
     this.app = Davis(function() {
       var action, controller, davis, name, _i, _len, _results;
       davis = this;

@@ -80,8 +80,6 @@ class Minigap.ActionContext
         @document(selector).append(content)
 
   _renderTemplate: (template, context) ->
-
-    console.log require("util").inspect(Minigap.templates)
     t = Minigap.templates[template]
     if not t?
       throw "Template '#{template}' not found."
