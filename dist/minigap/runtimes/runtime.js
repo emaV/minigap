@@ -11,6 +11,8 @@ Minigap.Runtime = (function() {
     this.mainFrame = "body";
     this.defaultLocale = "en";
     this.locales = {};
+    this._global = typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : void 0;
+    this._session = {};
   }
 
   Runtime.prototype.origin = function(name, origin) {
@@ -34,6 +36,28 @@ Minigap.Runtime = (function() {
       _results.push(l[k] = v);
     }
     return _results;
+  };
+
+  Runtime.prototype.global = function(key, value) {
+    if (typeof key === "undefined") {
+      return this._global;
+    } else {
+      if (typeof value !== "undefined") {
+        this._global[key] = value;
+      }
+      return this._global[key];
+    }
+  };
+
+  Runtime.prototype.session = function(key, value) {
+    if (typeof key === "undefined") {
+      return this._session;
+    } else {
+      if (typeof value !== "undefined") {
+        this._session[key] = value;
+      }
+      return this._session[key];
+    }
   };
 
   Runtime.prototype.setMainFrame = function(selector) {

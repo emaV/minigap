@@ -1,6 +1,6 @@
 module.exports = function(runner) {
-  runner.helper("parseTargets", function(config, envs) {
-    var availableTargets, invalidTargets, targets;
+  runner.helper("parseTargets", function(config, targets) {
+    var availableTargets, invalidTargets;
     availableTargets = config.availableTargets();
     if (this.h.isEmpty(targets)) {
       targets = availableTargets;

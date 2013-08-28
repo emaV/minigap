@@ -3,7 +3,7 @@ module.exports = (runner) ->
   #
   #
 
-  runner.helper "parseTargets", (config, envs) ->
+  runner.helper "parseTargets", (config, targets) ->
     availableTargets = config.availableTargets()
 
     if @h.isEmpty(targets)

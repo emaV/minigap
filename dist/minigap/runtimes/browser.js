@@ -10,6 +10,10 @@ var BrowserActionContext,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
+HTMLFormElement.prototype.toJSON = function() {
+  return $(this).serializeObject();
+};
+
 BrowserActionContext = (function(_super) {
   __extends(BrowserActionContext, _super);
 
@@ -61,18 +65,6 @@ Minigap.BrowserRuntime = (function(_super) {
       _this = this;
     controllers = this.controllers;
     doc = $(document);
-    doc.on("submit", function(e) {
-      var evt, form;
-      if (e._minigapHandled == null) {
-        form = $(e.target);
-        evt = $.Event("submit");
-        evt._minigapHandled = true;
-        evt.object = form.serializeObject();
-        form.trigger(evt);
-        e.stopPropagation();
-        return false;
-      }
-    });
     this.app = Davis(function() {
       var action, controller, davis, name, _i, _len, _results;
       davis = this;

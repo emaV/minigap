@@ -9,6 +9,12 @@ class Minigap.Runtime
     @mainFrame = "body"
     @defaultLocale = "en"
     @locales = {}
+    @_global = if typeof global isnt 'undefined'
+      global
+    else if typeof window isnt 'undefined' 
+      window
+
+    @_session = {}
 
   origin: (name, origin) ->
     @origins[name] = origin
@@ -22,6 +28,22 @@ class Minigap.Runtime
     l = @locales[localeId]
     for k, v of obj
       l[k] = v
+
+  global: (key, value) ->
+    if typeof key is "undefined"
+      @_global
+    else 
+      if typeof value isnt "undefined"
+        @_global[key] = value
+      @_global[key]
+
+  session: (key, value) ->
+    if typeof key is "undefined"
+      @_session
+    else 
+      if typeof value isnt "undefined"
+        @_session[key] = value
+      @_session[key]
 
   setMainFrame: (selector) ->
     @mainFrame = selector

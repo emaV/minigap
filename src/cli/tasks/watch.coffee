@@ -1,7 +1,7 @@
 module.exports = (runner) ->
   runner.task "watch", "Watch for changes on the source code and rebuild the changed sources only", {}, {}, (targets...)->
     @h.check()
-    
+
     envs    = if @options.env then [@options.env] else []
     config  = @h.readBuildConfig()
     targets = @h.parseTargets(config, targets)
@@ -24,6 +24,7 @@ module.exports = (runner) ->
 
     if @options.dev
       develPath = @h.path.resolve(__dirname, "../../dist/")
+      srcDirToTarget[develPath] = targets
       toBeWatched.push(develPath)
 
     targetsFor = (filename) ->

@@ -5,6 +5,9 @@
 //= require "../lib/form-serializer.js" --skip
 //= require "./runtime.js"
 `
+# Dom extensions
+HTMLFormElement.prototype.toJSON = () ->
+  $(@).serializeObject()
 
 class BrowserActionContext extends Minigap.ActionContext
   constructor: (@impl = {})->
@@ -35,15 +38,6 @@ class Minigap.BrowserRuntime extends Minigap.Runtime
   start: () => 
     controllers = @controllers
     doc = $(document)
-    doc.on "submit", (e) ->
-      if not e._minigapHandled?
-        form = $(e.target)
-        evt = $.Event("submit")
-        evt._minigapHandled = true
-        evt.object = form.serializeObject()
-        form.trigger(evt)
-        e.stopPropagation()
-        false
 
     @app = Davis -> 
       davis = @

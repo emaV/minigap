@@ -27,6 +27,7 @@ module.exports = function(runner) {
     toBeWatched = this.h.uniq(srcDirs);
     if (this.options.dev) {
       develPath = this.h.path.resolve(__dirname, "../../dist/");
+      srcDirToTarget[develPath] = targets;
       toBeWatched.push(develPath);
     }
     targetsFor = function(filename) {
