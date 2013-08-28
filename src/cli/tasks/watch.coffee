@@ -7,7 +7,7 @@ module.exports = (runner) ->
     targets = @h.parseTargets(config, targets)
     envs    = @h.parseEnvs(config, envs)
     env     = envs[0]
-
+    
     srcDirs = []
     srcDirToTarget = {}
     for target in targets
@@ -22,10 +22,16 @@ module.exports = (runner) ->
 
     toBeWatched = @h.uniq(srcDirs)
 
-    if @options.dev
+    if @options["minigap-dev"]
       develPath = @h.path.resolve(__dirname, "../../dist/")
       srcDirToTarget[develPath] = targets
       toBeWatched.push(develPath)
+
+    if @options["extras"]
+      for extraPath in @options.extras.split(",")
+        extraPath = @h.path.resolve(extraPath)
+        srcDirToTarget[extraPath] = targets
+        toBeWatched.push(extraPath)
 
     targetsFor = (filename) ->
       res = []
@@ -36,7 +42,7 @@ module.exports = (runner) ->
 
     console.log @h.clc.green("Watching for changes in #{toBeWatched.join(', ')} ..")
     t = null
-    rebuildLapse = 300 # Waits 300 ms between file change and rebuild
+    rebuildLapse = if @options.wait then parseInt(@options.wait) else 500 # Waits 500 ms between file change and rebuild
 
     @h.watch toBeWatched, (filename) ->
       console.log runner.h.clc.yellow("Changed: #{filename}")
