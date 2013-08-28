@@ -1,24 +1,23 @@
 {
   "name": "minigap",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Client-side javascript framework for PhoneGap",
-  "homepage":    "https://github.com/mcasimir/minigap",
+  "homepage": "https://github.com/mcasimir/minigap",
   "author": {
-    "name":  "mcasimir",
+    "name": "mcasimir",
     "email": "maurizio.cas@gmail.com",
-    "url":   "https://github.com/mcasimir"
+    "url": "https://github.com/mcasimir"
   },
   "keywords": [
     "minigap",
     "phonegap"
   ],
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/mcasimir/minigap.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mcasimir/minigap.git"
   },
-
   "main": "dist/minigap.js",
-  "bin":          {
+  "bin": {
     "minigap": "bin/minigap.js"
   },
   "dependencies": {
